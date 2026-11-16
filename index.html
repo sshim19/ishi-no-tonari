@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>石のとなり</title>
+    <link rel="stylesheet" href="./ui/styles.css">
+  </head>
+  <body>
+    <main class="app" id="app">
+      <section id="screen-explain" hidden>
+        <h1 data-copy-id="E1" tabindex="-1">石のとなり</h1>
+        <p class="lead" data-copy-id="E2">マインスイーパーに似ています。
+数字は上下左右の石の数です。
+斜めは数えません。
+うその数字が1つだけあります。
+そのマスを押してください。</p>
+        <button type="button" class="action" data-copy-id="E3" id="btn-e3">見本を見る</button>
+      </section>
+
+      <section id="screen-sample" hidden>
+        <h1 data-copy-id="S1" tabindex="-1">見本</h1>
+        <p class="lead" data-copy-id="S2">これは見本です。
+この盤は見るだけです。
+まんなかの2は、上下左右の石の数です。
+斜めの石は数えません。</p>
+        <div class="board board-sample" id="sample-board"></div>
+        <button type="button" class="action" data-copy-id="S5" id="btn-s5">はじめる</button>
+      </section>
+
+      <section id="screen-empty" hidden>
+        <h1 data-copy-id="P1" tabindex="-1">石のとなり</h1>
+        <p class="lead" data-copy-id="Z1">今日の盤はまだありません</p>
+      </section>
+
+      <section id="screen-play" hidden>
+        <h1 data-copy-id="P1" tabindex="-1">石のとなり</h1>
+        <button type="button" class="action action-secondary play-sample-btn" data-copy-id="S6" id="btn-s6" hidden>見本を見る</button>
+        <p class="lead" data-copy-id="P2">数字は上下左右の石の数です。
+斜めは数えません。
+うその数字が1つだけあります。</p>
+        <p class="rule" data-copy-id="P3">マスを押すのは1回だけです。</p>
+        <div class="board board-play" id="play-board" role="group" aria-label="たて6、よこ6の盤"></div>
+        <div class="result-block" id="result-block" hidden>
+          <p class="result-text" id="result-text" data-copy-id="W1" aria-live="polite" tabindex="-1"></p>
+          <p class="share-lines" id="share-lines" data-copy-id="W5"></p>
+          <button type="button" class="action" data-copy-id="W6" id="btn-copy">コピー</button>
+          <p class="copy-status" id="copy-status" hidden></p>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="sample-dialog" id="sample-dialog" aria-labelledby="overlay-s1">
+      <h1 data-copy-id="S1" id="overlay-s1">見本</h1>
+      <p class="lead" data-copy-id="S2">これは見本です。
+この盤は見るだけです。
+まんなかの2は、上下左右の石の数です。
+斜めの石は数えません。</p>
+      <div class="board board-sample" id="overlay-board"></div>
+      <button type="button" class="action action-secondary" data-copy-id="S7" id="btn-s7">閉じる</button>
+    </dialog>
+
+    <script type="module" src="./play.mjs"></script>
+  </body>
+</html>
