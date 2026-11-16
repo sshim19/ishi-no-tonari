@@ -11,7 +11,8 @@
       <section id="screen-explain" hidden>
         <h1 data-copy-id="E1" tabindex="-1">石のとなり</h1>
         <p class="lead" data-copy-id="E2">マインスイーパーに似ています。
-数字は上下左右の石の数です。
+石は6個ありますが、見えません。
+どのマスにも、上下左右にある石の数が書いてあります。
 斜めは数えません。
 うその数字が1つだけあります。
 そのマスを押してください。</p>
@@ -22,9 +23,11 @@
         <h1 data-copy-id="S1" tabindex="-1">見本</h1>
         <p class="lead" data-copy-id="S2">これは見本です。
 この盤は見るだけです。
-まんなかの2は、上下左右の石の数です。
-斜めの石は数えません。</p>
+石は2個です。左上とまんなかは、どちらも0です。
+0でも石のことがあります。</p>
         <div class="board board-sample" id="sample-board"></div>
+        <p class="rule" data-copy-id="S8">下の盤は石を消しています。右上の1がうそです。</p>
+        <div class="board board-sample" id="sample-puzzle-board"></div>
         <button type="button" class="action" data-copy-id="S5" id="btn-s5">はじめる</button>
       </section>
 
@@ -36,15 +39,17 @@
       <section id="screen-play" hidden>
         <h1 data-copy-id="P1" tabindex="-1">石のとなり</h1>
         <button type="button" class="action action-secondary play-sample-btn" data-copy-id="S6" id="btn-s6" hidden>見本を見る</button>
-        <p class="lead" data-copy-id="P2">数字は上下左右の石の数です。
-斜めは数えません。
-うその数字が1つだけあります。</p>
+        <p class="progress" id="play-progress" data-copy-id="P10">3問目／5問</p>
+        <p class="lead" data-copy-id="P2">石は6個ありますが、見えません。
+どのマスにも、上下左右の石の数があります。
+斜めは数えません。うその数字が1つだけあります。</p>
         <p class="rule" data-copy-id="P3">マスを押すのは1回だけです。</p>
         <div class="board board-play" id="play-board" role="group" aria-label="たて6、よこ6の盤"></div>
         <div class="result-block" id="result-block" hidden>
           <p class="result-text" id="result-text" data-copy-id="W1" aria-live="polite" tabindex="-1"></p>
-          <p class="share-lines" id="share-lines" data-copy-id="W5"></p>
-          <button type="button" class="action" data-copy-id="W6" id="btn-copy">コピー</button>
+          <p class="share-lines" id="share-lines" data-copy-id="D5" hidden></p>
+          <button type="button" class="action" data-copy-id="W6" id="btn-copy" hidden>コピー</button>
+          <button type="button" class="action" data-copy-id="N1" id="btn-next" hidden>次の問題へ</button>
           <p class="copy-status" id="copy-status" hidden></p>
         </div>
       </section>
@@ -54,9 +59,11 @@
       <h1 data-copy-id="S1" id="overlay-s1">見本</h1>
       <p class="lead" data-copy-id="S2">これは見本です。
 この盤は見るだけです。
-まんなかの2は、上下左右の石の数です。
-斜めの石は数えません。</p>
+石は2個です。左上とまんなかは、どちらも0です。
+0でも石のことがあります。</p>
       <div class="board board-sample" id="overlay-board"></div>
+      <p class="rule" data-copy-id="S8">下の盤は石を消しています。右上の1がうそです。</p>
+      <div class="board board-sample" id="overlay-puzzle-board"></div>
       <button type="button" class="action action-secondary" data-copy-id="S7" id="btn-s7">閉じる</button>
     </dialog>
 

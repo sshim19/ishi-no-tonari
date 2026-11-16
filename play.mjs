@@ -1,48 +1,76 @@
 /**
- * 方向D 統合ページ。盤は stock.json、正誤は gen/board.mjs の inspectPuzzle、
+ * 方向D 統合ページ。盤は stock.json、正誤は gen/board.mjs の inspectHiddenPuzzle、
  * 結果と保存と共有は share/share.mjs。トラック2の仮の1問は使わない。
  * 画面文の正本は 02-copy.md。日替わりの見出しと連続日は出さない。
  * 日替わりは 01-spec の JST 暦日。開始日は START_DATE_JST の1か所。
+ * 1暦日は在庫 5 問。問の並びは汎用のスロットで、盤の見せ方は問ごとに差し替えられる。
+ * 石マスと数字マスの見た目は cellFace の1か所。隠す版はそこだけ差し替える。
  */
 import {
   CELL_KANA,
-  inspectPuzzle,
+  inspectHiddenPuzzle,
 } from "./gen/board.mjs";
 import {
-  loadRecord,
-  saveOutcome,
+  PUZZLES_PER_DAY,
+  dayComplete,
+  firstOpenSlot,
+  loadDayRecord,
+  progressLine,
+  saveSlot,
   viewModel,
 } from "./share/share.mjs";
 
 export const INTRO_KEY = "ishi-no-tonari.intro.v1";
 
-/** 見本 3×3。01-spec の表。押す対象ではない。 */
-export const SAMPLE = [
-  { kana: "ア", stone: true },
-  { kana: "イ", stone: false, value: 1 },
-  { kana: "ウ", stone: false, value: 1 },
-  { kana: "エ", stone: false, value: 1 },
-  { kana: "オ", stone: false, value: 2 },
-  { kana: "カ", stone: true },
-  { kana: "キ", stone: false, value: 1 },
-  { kana: "ク", stone: true },
-  { kana: "ケ", stone: false, value: 2 },
+/** 見本 3×3。石は左上とまんなか。押す対象ではない。 */
+export const SAMPLE_TRUE = [
+  { kana: "ア", stone: true, value: 0 },
+  { kana: "イ", stone: false, value: 2 },
+  { kana: "ウ", stone: false, value: 0 },
+  { kana: "エ", stone: false, value: 2 },
+  { kana: "オ", stone: true, value: 0 },
+  { kana: "カ", stone: false, value: 1 },
+  { kana: "キ", stone: false, value: 0 },
+  { kana: "ク", stone: false, value: 1 },
+  { kana: "ケ", stone: false, value: 0 },
 ];
 
-/** 説明・見本・本番の文。結果と空状態は share の COPY。 */
+/** 石を消した見本。右上の1がうそ。 */
+export const SAMPLE_PUZZLE = [
+  { kana: "ア", stone: true, value: 0 },
+  { kana: "イ", stone: false, value: 2 },
+  { kana: "ウ", stone: false, value: 1 },
+  { kana: "エ", stone: false, value: 2 },
+  { kana: "オ", stone: true, value: 0 },
+  { kana: "カ", stone: false, value: 1 },
+  { kana: "キ", stone: false, value: 0 },
+  { kana: "ク", stone: false, value: 1 },
+  { kana: "ケ", stone: false, value: 0 },
+];
+
+/** @deprecated 説明盤。SAMPLE_TRUE と同じ。 */
+export const SAMPLE = SAMPLE_TRUE;
+
+/**
+ * 説明・見本・本番の文。結果と空状態は share の COPY。
+ * 石の見せ方を変えるときは E2 / S2 / P2 / P3 / P5 を差し替える。
+ */
 export const SCREEN_COPY = {
   E1: "石のとなり",
-  E2: "マインスイーパーに似ています。\n数字は上下左右の石の数です。\n斜めは数えません。\nうその数字が1つだけあります。\nそのマスを押してください。",
+  E2: "マインスイーパーに似ています。\n石は6個ありますが、見えません。\nどのマスにも、上下左右にある石の数が書いてあります。\n斜めは数えません。\nうその数字が1つだけあります。\nそのマスを押してください。",
   E3: "見本を見る",
   S1: "見本",
-  S2: "これは見本です。\nこの盤は見るだけです。\nまんなかの2は、上下左右の石の数です。\n斜めの石は数えません。",
+  S2: "これは見本です。\nこの盤は見るだけです。\n石は2個です。左上とまんなかは、どちらも0です。\n0でも石のことがあります。",
+  S8: "下の盤は石を消しています。右上の1がうそです。",
   S5: "はじめる",
   S6: "見本を見る",
   S7: "閉じる",
   P1: "石のとなり",
-  P2: "数字は上下左右の石の数です。\n斜めは数えません。\nうその数字が1つだけあります。",
+  P2: "石は6個ありますが、見えません。\nどのマスにも、上下左右の石の数があります。\n斜めは数えません。うその数字が1つだけあります。",
   P3: "マスを押すのは1回だけです。",
   P8: "たて6、よこ6の盤",
+  P10: "3問目／5問",
+  N1: "次の問題へ",
 };
 
 export const FORBIDDEN = [
@@ -69,8 +97,10 @@ export const FORBIDDEN = [
  * 公開開始日（Asia/Tokyo の暦日）。01-spec は「日付は JST の暦日」と
  * 在庫が尽きた日は Z1 と書く。開始日の暦対応は正本に無いのでここ1か所。
  * 2026-11-16 JST をフリーズ日1とし、以降1日ずつ進む。
+ * 1暦日は在庫 5 問なので、遊べる暦日は 1〜6。日7以降と開始前は Z1。
  */
 export const START_DATE_JST = "2026-11-16";
+export const PLAYABLE_CALENDAR_DAYS = 6;
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -137,11 +167,17 @@ export function parsePlayParams(search, nowMs = currentNowMs()) {
   if (rawDay != null && rawDay !== "") {
     requestedDay = Number(rawDay);
   }
+  const rawSlot = params.get("slot");
+  let requestedSlot = null;
+  if (rawSlot != null && rawSlot !== "") {
+    requestedSlot = Number(rawSlot);
+  }
   return {
     empty,
     visit2,
     failCopy,
     requestedDay,
+    requestedSlot,
     todayDay: dayNumberFromEpoch(nowMs),
   };
 }
@@ -154,43 +190,103 @@ export function parsePlayParams(search, nowMs = currentNowMs()) {
  *   todayDay: number,
  * }} params
  */
-export function selectBoard(stock, params) {
-  if (params.empty) {
-    return { hasBoard: false, day: null, info: null, raw: null };
-  }
-  if (!Array.isArray(stock?.days)) {
-    return { hasBoard: false, day: null, info: null, raw: null };
-  }
-  const length = stock.days.length;
-  const requested = params.requestedDay;
-  const todayDay = params.todayDay;
-  let day;
-  if (requested == null) {
-    day = todayDay;
-  } else if (!Number.isInteger(requested) || requested > todayDay) {
-    return { hasBoard: false, day: null, info: null, raw: null };
-  } else {
-    day = requested;
-  }
-  if (!Number.isInteger(day) || day < 1 || day > length) {
-    return { hasBoard: false, day: null, info: null, raw: null };
-  }
-  const raw = stock.days[day - 1];
-  const info = inspectPuzzle({
-    stones: raw.stones,
-    lie: raw.lie,
-    displayed: raw.displayed,
-  });
-  if (!info.ok) {
-    return { hasBoard: false, day, info, raw };
-  }
-  return { hasBoard: true, day, info, raw };
+function emptyDay() {
+  return { hasBoard: false, day: null, calendarDay: null, info: null, raw: null, puzzles: [] };
 }
 
 /**
- * 正誤は inspectPuzzle が返した唯一のうそマス。仮の1問の4型判定は使わない。
+ * 暦日 N は在庫 5N-4 から 5N。日 1〜6 だけ盤がある。
  *
- * @param {ReturnType<typeof inspectPuzzle> | null} info
+ * @param {{ days?: unknown }} stock
+ * @param {{
+ *   empty: boolean,
+ *   requestedDay: number | null,
+ *   todayDay: number,
+ * }} params
+ */
+export function selectDay(stock, params) {
+  if (params.empty) {
+    return emptyDay();
+  }
+  if (!Array.isArray(stock?.days)) {
+    return emptyDay();
+  }
+  const requested = params.requestedDay;
+  const todayDay = params.todayDay;
+  let calendarDay;
+  if (requested == null) {
+    calendarDay = todayDay;
+  } else if (!Number.isInteger(requested) || requested > todayDay) {
+    return emptyDay();
+  } else {
+    calendarDay = requested;
+  }
+  if (
+    !Number.isInteger(calendarDay) ||
+    calendarDay < 1 ||
+    calendarDay > PLAYABLE_CALENDAR_DAYS
+  ) {
+    return emptyDay();
+  }
+  const start = (calendarDay - 1) * PUZZLES_PER_DAY;
+  const slice = stock.days.slice(start, start + PUZZLES_PER_DAY);
+  if (slice.length !== PUZZLES_PER_DAY) {
+    return emptyDay();
+  }
+  const puzzles = [];
+  for (const raw of slice) {
+    const info = inspectHiddenPuzzle({
+      stones: raw.stones,
+      lie: raw.lie,
+      displayed: raw.displayed,
+    });
+    if (!info.ok) {
+      return emptyDay();
+    }
+    puzzles.push({ info, raw, stockDay: raw.day });
+  }
+  return {
+    hasBoard: true,
+    day: calendarDay,
+    calendarDay,
+    info: puzzles[0].info,
+    raw: puzzles[0].raw,
+    puzzles,
+  };
+}
+
+/**
+ * 暦日の先頭の問。互換のため残す。5問の並びは selectDay。
+ *
+ * @param {{ days?: unknown }} stock
+ * @param {{
+ *   empty: boolean,
+ *   requestedDay: number | null,
+ *   todayDay: number,
+ * }} params
+ */
+export function selectBoard(stock, params) {
+  return selectDay(stock, params);
+}
+
+/**
+ * @param {number | null | undefined} requestedSlot
+ * @returns {number | null}
+ */
+export function parseSlot(requestedSlot) {
+  if (!Number.isInteger(requestedSlot)) {
+    return null;
+  }
+  if (requestedSlot < 1 || requestedSlot > PUZZLES_PER_DAY) {
+    return null;
+  }
+  return requestedSlot - 1;
+}
+
+/**
+ * 正誤は inspectHiddenPuzzle が返した唯一のうそマス。石のマスも押せる。
+ *
+ * @param {ReturnType<typeof inspectHiddenPuzzle> | null} info
  * @param {string} kana
  */
 export function judgePress(info, kana) {
@@ -201,23 +297,67 @@ export function judgePress(info, kana) {
   if (i < 0) {
     return { ignored: true, win: false };
   }
-  if (info.occupied[i]) {
-    return { ignored: true, win: false };
-  }
   return { ignored: false, win: kana === info.lieKana };
 }
 
 /**
- * マスの読み上げ。仮名は出さない。行・列は 1 始まり。
+ * マスの見た目と押せるか。石を隠す版はここだけ差し替える。
+ * いまは石マスに「石」を出し、数字マスだけ押せる。
+ *
+ * @param {{
+ *   stone: boolean,
+ *   value: number | null,
+ *   sample?: boolean,
+ * }} cell
+ */
+export function cellFace(cell) {
+  const stone = Boolean(cell.stone);
+  const sample = Boolean(cell.sample);
+  const revealed = Boolean(cell.revealed);
+  const drawStone = Boolean(cell.drawStone);
+  const value = cell.value;
+  if (sample) {
+    const showStone = drawStone && stone;
+    return {
+      body: showStone ? "石" : String(value),
+      value: showStone ? null : value,
+      className: showStone ? "cell cell-stone" : "cell",
+      copyId: "S3",
+      pressable: false,
+      stoneVisible: showStone,
+    };
+  }
+  if (revealed && stone) {
+    return {
+      body: "石",
+      value: null,
+      className: "cell cell-stone",
+      copyId: "P5",
+      pressable: false,
+      stoneVisible: true,
+    };
+  }
+  return {
+    body: String(value),
+    value,
+    className: "cell",
+    copyId: "P4",
+    pressable: !revealed,
+    stoneVisible: false,
+  };
+}
+
+/**
+ * マスの読み上げ。仮名は出さない。行・列は 1 始まり。本文は cellFace。
  *
  * @param {number} row
  * @param {number} col
  * @param {boolean} stone
  * @param {number | null} value
  */
-export function ariaFor(row, col, stone, value) {
-  const body = stone ? "石" : String(value);
-  return `上から${row}番目、左から${col}番目、${body}`;
+export function ariaFor(row, col, stone, value, options = {}) {
+  const face = cellFace({ stone, value, ...options });
+  return `上から${row}番目、左から${col}番目、${face.body}`;
 }
 
 /**
@@ -229,7 +369,7 @@ export function saveOptions(day) {
   if (!day) {
     return { daily: false };
   }
-  return { daily: true, todayKey: `stock-${day}` };
+  return { daily: true, todayKey: `day-${day}` };
 }
 
 /**
@@ -252,7 +392,9 @@ async function boot() {
   const screenEmpty = document.getElementById("screen-empty");
   const screenPlay = document.getElementById("screen-play");
   const sampleBoard = document.getElementById("sample-board");
+  const samplePuzzleBoard = document.getElementById("sample-puzzle-board");
   const overlayBoard = document.getElementById("overlay-board");
+  const overlayPuzzleBoard = document.getElementById("overlay-puzzle-board");
   const playBoard = document.getElementById("play-board");
   const sampleDialog = document.getElementById("sample-dialog");
   const btnE3 = document.getElementById("btn-e3");
@@ -260,22 +402,51 @@ async function boot() {
   const btnS6 = document.getElementById("btn-s6");
   const btnS7 = document.getElementById("btn-s7");
   const btnCopy = document.getElementById("btn-copy");
+  const btnNext = document.getElementById("btn-next");
   const resultBlock = document.getElementById("result-block");
   const resultText = document.getElementById("result-text");
   const shareLines = document.getElementById("share-lines");
   const copyStatus = document.getElementById("copy-status");
+  const playProgress = document.getElementById("play-progress");
+  const playLead = document.querySelector("#screen-play [data-copy-id='P2']");
+  const playRule = document.querySelector("#screen-play [data-copy-id='P3']");
 
   const params = parsePlayParams(globalThis.location.search, currentNowMs());
-  const selected = selectBoard(stockJson, params);
+  const selected = selectDay(stockJson, params);
   const storage = globalThis.localStorage;
-  const record = selected.hasBoard
-    ? loadRecord(storage, saveOptions(selected.day))
-    : { version: 1, outcome: null };
+  const dateKey = selected.hasBoard ? saveOptions(selected.calendarDay).todayKey : "";
   let overlay = false;
-  let pressed = record.outcome ? "saved" : null;
+  /** @type {string | null} */
+  let pressed = null;
   /** @type {"" | "ok" | "fail"} */
   let copyState = "";
   const returnVisit = params.visit2 || introSeen();
+
+  function currentRecord() {
+    if (!selected.hasBoard) {
+      return { version: 2, dateKey: "", outcomes: [null, null, null, null, null] };
+    }
+    return loadDayRecord(storage, dateKey);
+  }
+
+  function activeSlot() {
+    const pinned = parseSlot(params.requestedSlot);
+    if (pinned != null) {
+      return pinned;
+    }
+    const rec = currentRecord();
+    const open = firstOpenSlot(rec.outcomes);
+    if (open >= 0) {
+      return open;
+    }
+    return PUZZLES_PER_DAY - 1;
+  }
+
+  let slotIndex = selected.hasBoard ? activeSlot() : 0;
+
+  function currentPuzzle() {
+    return selected.puzzles[slotIndex] ?? null;
+  }
 
   function introSeen() {
     try {
@@ -293,47 +464,54 @@ async function boot() {
     }
   }
 
-  function fillSample(board) {
+  function fillSample(board, cells, drawStone) {
     board.replaceChildren();
-    for (let i = 0; i < SAMPLE.length; i += 1) {
-      const cell = SAMPLE[i];
-      board.append(
-        makeCell(cell.kana, cell.stone, cell.stone ? null : cell.value, false, "S3", i, 3),
-      );
+    for (let i = 0; i < cells.length; i += 1) {
+      const cell = cells[i];
+      const face = cellFace({
+        stone: cell.stone,
+        value: cell.value,
+        sample: true,
+        drawStone,
+      });
+      board.append(makeCell(cell.kana, face, i, 3));
     }
   }
 
   function fillPlay() {
     playBoard.replaceChildren();
-    if (!selected.hasBoard || !selected.info) {
+    const puzzle = currentPuzzle();
+    if (!selected.hasBoard || !puzzle) {
       return;
     }
-    const board = selected.info.board;
+    const revealed = Boolean(slotOutcome());
+    const hidden = puzzle.info.hiddenBoard;
+    const truth = puzzle.info.neighborCounts;
     for (let i = 0; i < CELL_KANA.length; i += 1) {
       const kana = CELL_KANA[i];
-      const stone = board[i] === -1;
-      const value = stone ? null : board[i];
-      const copyId = stone ? "P5" : "P4";
-      playBoard.append(makeCell(kana, stone, value, !stone, copyId, i, 6));
+      const stone = Boolean(puzzle.info.occupied[i]);
+      const value = revealed && i === puzzle.info.lie ? truth[i] : hidden[i];
+      const face = cellFace({ stone, value, revealed });
+      playBoard.append(makeCell(kana, face, i, 6));
     }
   }
 
-  function makeCell(kana, stone, value, pressable, copyId, index, cols) {
-    const el = document.createElement(pressable ? "button" : "div");
-    if (pressable) {
+  function makeCell(kana, face, index, cols) {
+    const el = document.createElement(face.pressable ? "button" : "div");
+    if (face.pressable) {
       el.type = "button";
     }
-    el.className = stone ? "cell cell-stone" : "cell";
+    el.className = face.className;
     el.dataset.kana = kana;
-    el.dataset.copyId = copyId;
+    el.dataset.copyId = face.copyId;
     const row = Math.floor(index / cols) + 1;
     const col = (index % cols) + 1;
-    el.setAttribute("aria-label", ariaFor(row, col, stone, value));
+    el.setAttribute("aria-label", `上から${row}番目、左から${col}番目、${face.body}`);
     const bodyEl = document.createElement("span");
     bodyEl.className = "cell-body";
-    bodyEl.textContent = stone ? "石" : String(value);
+    bodyEl.textContent = face.body;
     el.append(bodyEl);
-    if (pressable) {
+    if (face.pressable) {
       el.addEventListener("click", () => onPlayPress(kana));
     }
     return el;
@@ -354,31 +532,72 @@ async function boot() {
     return viewModel({
       hasBoard: selected.hasBoard,
       daily: true,
-      record: selected.hasBoard ? record : null,
+      record: selected.hasBoard ? currentRecord() : null,
       copyState,
       streak: 12,
+      slot: slotIndex,
     });
+  }
+
+  function slotOutcome() {
+    const rec = currentRecord();
+    const value = rec.outcomes[slotIndex];
+    return value === "hit" || value === "miss" ? value : null;
+  }
+
+  function renderPlayChrome() {
+    if (playProgress) {
+      playProgress.textContent = progressLine(slotIndex);
+      playProgress.dataset.copyId = "P10";
+    }
+    const rec = currentRecord();
+    const complete = dayComplete(rec.outcomes);
+    const outcome = slotOutcome();
+    const compact = Boolean(outcome) || complete;
+    if (playLead) playLead.hidden = compact;
+    if (playRule) playRule.hidden = compact;
+    btnS6.hidden = !returnVisit || compact;
   }
 
   function renderResult() {
     const view = currentView();
+    const rec = currentRecord();
+    const complete = dayComplete(rec.outcomes);
+    const outcome = slotOutcome();
+    renderPlayChrome();
     if (!view.result) {
       resultBlock.hidden = true;
+      shareLines.hidden = true;
+      btnCopy.hidden = true;
+      btnNext.hidden = true;
       copyStatus.hidden = true;
       copyStatus.textContent = "";
       return;
     }
-    const win = record.outcome === "hit";
     resultBlock.hidden = false;
-    resultText.dataset.copyId = win ? "W1" : "L1";
-    resultText.textContent = view.result;
-    shareLines.dataset.copyId = win ? "W5" : "L4";
-    shareLines.textContent = view.share;
-    btnCopy.dataset.copyId = win ? "W6" : "L5";
-    btnCopy.textContent = view.copyLabel;
+    if (complete) {
+      resultText.dataset.copyId = "D1";
+      resultText.textContent = view.result;
+      shareLines.hidden = false;
+      shareLines.dataset.copyId = "D5";
+      shareLines.textContent = view.share;
+      btnCopy.hidden = false;
+      btnCopy.dataset.copyId = "W6";
+      btnCopy.textContent = view.copyLabel;
+      btnNext.hidden = true;
+    } else {
+      resultText.dataset.copyId = outcome === "hit" ? "W1" : "L1";
+      resultText.textContent = view.result;
+      shareLines.hidden = true;
+      shareLines.textContent = "";
+      btnCopy.hidden = true;
+      btnNext.hidden = slotIndex >= PUZZLES_PER_DAY - 1;
+      btnNext.dataset.copyId = "N1";
+      btnNext.textContent = SCREEN_COPY.N1;
+    }
     if (view.copyStatus) {
       copyStatus.hidden = false;
-      copyStatus.dataset.copyId = copyState === "ok" ? (win ? "W7" : "L6") : win ? "W8" : "L7";
+      copyStatus.dataset.copyId = copyState === "ok" ? "W7" : "W8";
       copyStatus.textContent = view.copyStatus;
     } else {
       copyStatus.hidden = true;
@@ -400,22 +619,43 @@ async function boot() {
     if (overlay) {
       return;
     }
-    if (record.outcome === "hit" || record.outcome === "miss") {
+    if (slotOutcome()) {
       return;
     }
-    const judged = judgePress(selected.info, kana);
+    const puzzle = currentPuzzle();
+    if (!puzzle) {
+      return;
+    }
+    const judged = judgePress(puzzle.info, kana);
     if (judged.ignored) {
       return;
     }
     const outcome = judged.win ? "hit" : "miss";
-    const saved = saveOutcome(storage, outcome, saveOptions(selected.day));
-    record.outcome = saved.outcome;
-    record.dateKey = saved.dateKey;
+    saveSlot(storage, dateKey, slotIndex, outcome);
     pressed = kana;
+    fillPlay();
     lockPlayBoard(kana);
     copyState = "";
     renderResult();
     resultText.focus();
+  }
+
+  function goNextPuzzle() {
+    if (slotIndex >= PUZZLES_PER_DAY - 1) {
+      return;
+    }
+    slotIndex += 1;
+    pressed = slotOutcome() ? "saved" : null;
+    copyState = "";
+    fillPlay();
+    if (slotOutcome()) {
+      lockPlayBoard(null);
+    }
+    renderResult();
+    const heading = document.querySelector("#screen-play h1");
+    if (heading) {
+      heading.focus();
+    }
   }
 
   async function copyShare() {
@@ -423,7 +663,6 @@ async function boot() {
     if (view.share === "") {
       return;
     }
-    const win = record.outcome === "hit";
     if (params.failCopy) {
       copyState = "fail";
       renderResult();
@@ -436,10 +675,10 @@ async function boot() {
         throw new Error("no clipboard");
       }
       copyState = "ok";
-      copyStatus.dataset.copyId = win ? "W7" : "L6";
+      copyStatus.dataset.copyId = "W7";
     } catch {
       copyState = "fail";
-      copyStatus.dataset.copyId = win ? "W8" : "L7";
+      copyStatus.dataset.copyId = "W8";
     }
     renderResult();
   }
@@ -580,10 +819,12 @@ async function boot() {
     const keys = {
       p2: document.querySelector("#screen-play [data-copy-id='P2']"),
       p3: document.querySelector("#screen-play [data-copy-id='P3']"),
+      progress: playProgress,
       board: playBoard,
       result: resultText,
       share: shareLines,
       copy: btnCopy,
+      next: btnNext,
       empty: document.querySelector("#screen-empty [data-copy-id='Z1']"),
     };
     const visibleBlob = visibleCopy()
@@ -600,7 +841,11 @@ async function boot() {
         pressed,
         resultVisible: !resultBlock.hidden,
         hasBoard: selected.hasBoard,
-        day: selected.day,
+        day: selected.calendarDay,
+        slot: slotIndex + 1,
+        stockDay: currentPuzzle()?.stockDay ?? null,
+        complete: selected.hasBoard ? dayComplete(currentRecord().outcomes) : false,
+        nextVisible: Boolean(btnNext) && !btnNext.hidden,
       },
       viewport: {
         innerWidth,
@@ -630,13 +875,18 @@ async function boot() {
         numberButtons: playCells
           .filter((cell) => cell.tag === "BUTTON" && !cell.className.includes("cell-stone"))
           .map((cell) => cell.kana),
+        stoneCellsAfterReveal: playCells.filter(
+          (cell) => cell.className.includes("cell-stone") && cell.body === "石",
+        ).length,
         inView: {
           p2: inViewport(keys.p2, innerWidth, innerHeight),
           p3: inViewport(keys.p3, innerWidth, innerHeight),
+          progress: inViewport(keys.progress, innerWidth, innerHeight),
           board: inViewport(keys.board, innerWidth, innerHeight),
           result: resultBlock.hidden ? true : inViewport(keys.result, innerWidth, innerHeight),
-          share: resultBlock.hidden ? true : inViewport(keys.share, innerWidth, innerHeight),
-          copy: resultBlock.hidden ? true : inViewport(keys.copy, innerWidth, innerHeight),
+          share: shareLines.hidden ? true : inViewport(keys.share, innerWidth, innerHeight),
+          copy: btnCopy.hidden ? true : inViewport(keys.copy, innerWidth, innerHeight),
+          next: btnNext.hidden ? true : inViewport(keys.next, innerWidth, innerHeight),
           empty: screenEmpty.hidden ? true : inViewport(keys.empty, innerWidth, innerHeight),
         },
       },
@@ -654,8 +904,10 @@ async function boot() {
     };
   };
 
-  fillSample(sampleBoard);
-  fillSample(overlayBoard);
+  fillSample(sampleBoard, SAMPLE_TRUE, true);
+  fillSample(samplePuzzleBoard, SAMPLE_PUZZLE, false);
+  fillSample(overlayBoard, SAMPLE_TRUE, true);
+  fillSample(overlayPuzzleBoard, SAMPLE_PUZZLE, false);
   fillPlay();
 
   btnE3.addEventListener("click", () => showScreen("sample"));
@@ -672,22 +924,26 @@ async function boot() {
   btnCopy.addEventListener("click", () => {
     copyShare();
   });
+  btnNext.addEventListener("click", () => {
+    goNextPuzzle();
+  });
 
   if (!selected.hasBoard) {
     showScreen("empty");
     return;
   }
 
-  if (record.outcome === "hit" || record.outcome === "miss") {
-    btnS6.hidden = false;
+  const openingOutcome = slotOutcome();
+  if (openingOutcome) {
+    pressed = "saved";
     lockPlayBoard(null);
     renderResult();
     showScreen("play");
     return;
   }
 
+  renderPlayChrome();
   if (returnVisit) {
-    btnS6.hidden = false;
     showScreen("play");
   } else {
     showScreen("explain");
