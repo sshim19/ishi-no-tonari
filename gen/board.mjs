@@ -307,6 +307,119 @@ export function displayedBoard(stones, lie, displayed) {
 }
 
 /**
+ * 石のマスも含め、上下左右の隣数。隠す版の正しい盤。
+ *
+ * @param {Uint8Array | number[]} occupied
+ * @returns {Int8Array}
+ */
+export function neighborCounts(occupied) {
+  const shown = new Int8Array(N);
+  for (let i = 0; i < N; i += 1) {
+    let t = 0;
+    const nei = NEI[i];
+    for (let j = 0; j < nei.length; j += 1) t += occupied[nei[j]];
+    shown[i] = t;
+  }
+  return shown;
+}
+
+/**
+ * 36マスすべて数字。石の位置は occupied。うそマスだけ displayed。
+ *
+ * @param {number[]} stones
+ * @param {number} lie
+ * @param {number} displayed
+ */
+export function hiddenDisplayedBoard(stones, lie, displayed) {
+  const occupied = occupy(stones);
+  const actual = neighborCounts(occupied);
+  /** @type {number[]} */
+  const board = Array.from({ length: N }, (_, i) => actual[i]);
+  board[lie] = displayed;
+  return { occupied, actual, board };
+}
+
+/**
+ * 角≥3、辺≥4、内部≥5。次数を超えた表示。
+ *
+ * @param {ArrayLike<number>} board
+ * @returns {number}
+ */
+export function hiddenOverdegreeIndex(board) {
+  for (let i = 0; i < N; i += 1) {
+    if (board[i] > DEG[i]) return i;
+  }
+  return -1;
+}
+
+/**
+ * 隠す版の1問。見える石の即解型は見ない。次数超えと±1と一意のうそだけ。
+ *
+ * @param {{ stones: unknown, lie: unknown, displayed: unknown }} raw
+ */
+export function inspectHiddenPuzzle(raw) {
+  /** @type {string[]} */
+  const errors = [];
+  const stones = normalizeStones(raw.stones);
+  if (!stones) errors.push("石は6個の重複しない 0..35");
+  if (!Number.isInteger(raw.lie) || raw.lie < 0 || raw.lie >= N) {
+    errors.push("うそマスの番号が 0..35 ではない");
+  }
+  if (!Number.isInteger(raw.displayed) || raw.displayed < 0 || raw.displayed > 4) {
+    errors.push("表示が 0..4 の整数ではない");
+  }
+  if (errors.length) {
+    return {
+      ok: false,
+      errors,
+      stones,
+      lie: raw.lie,
+      displayed: raw.displayed,
+    };
+  }
+  const lie = raw.lie;
+  const displayed = raw.displayed;
+  if (stones.includes(lie)) errors.push("うそマスが石のうえにある");
+  const { occupied, actual, board } = hiddenDisplayedBoard(stones, lie, displayed);
+  const truth = actual[lie];
+  const delta = displayed - truth;
+  if (delta !== 1 && delta !== -1) errors.push("表示が正しい隣数から ±1 ではない");
+  if (displayed > DEG[lie]) errors.push("即解: 次数超え");
+  const over = hiddenOverdegreeIndex(board);
+  if (over >= 0) errors.push("即解: 次数超え");
+  let lieCount = 0;
+  let found = -1;
+  for (let i = 0; i < N; i += 1) {
+    if (board[i] !== actual[i]) {
+      lieCount += 1;
+      found = i;
+    }
+  }
+  if (lieCount === 0) errors.push("うそが 0 マス");
+  if (lieCount >= 2) errors.push(`うそが ${lieCount} マス`);
+  if (lieCount === 1 && found !== lie) errors.push("うそのマスが一意だが記録と違う");
+  const region = cellRegion(lie);
+  return {
+    ok: errors.length === 0,
+    errors,
+    stones,
+    lie,
+    lieKana: CELL_KANA[lie],
+    displayed,
+    actual: truth,
+    delta,
+    offsetJa: delta === 1 ? "1多い" : delta === -1 ? "1少ない" : "不正",
+    region,
+    regionJa: REGION_JA[region],
+    lieCount,
+    board,
+    hiddenBoard: board,
+    neighborCounts: actual,
+    occupied,
+  };
+}
+
+/**
  * @param {number[]} stones
  */
 export function stoneScatter(stones) {

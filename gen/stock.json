@@ -178,9 +178,9 @@
       ],
       "lie": 3,
       "lieKana": "エ",
-      "displayed": 1,
+      "displayed": 3,
       "actual": 2,
-      "delta": -1,
+      "delta": 1,
       "region": "edge"
     },
     {
@@ -246,9 +246,9 @@
       ],
       "lie": 2,
       "lieKana": "ウ",
-      "displayed": 1,
+      "displayed": 3,
       "actual": 2,
-      "delta": -1,
+      "delta": 1,
       "region": "edge"
     },
     {
@@ -399,9 +399,9 @@
       ],
       "lie": 24,
       "lieKana": "ノ",
-      "displayed": 1,
+      "displayed": 3,
       "actual": 2,
-      "delta": -1,
+      "delta": 1,
       "region": "edge"
     },
     {
@@ -416,9 +416,9 @@
       ],
       "lie": 19,
       "lieKana": "ト",
-      "displayed": 1,
+      "displayed": 3,
       "actual": 2,
-      "delta": -1,
+      "delta": 1,
       "region": "interior"
     },
     {
@@ -535,9 +535,9 @@
       ],
       "lie": 18,
       "lieKana": "テ",
-      "displayed": 1,
+      "displayed": 3,
       "actual": 2,
-      "delta": -1,
+      "delta": 1,
       "region": "edge"
     },
     {
