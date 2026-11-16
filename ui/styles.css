@@ -1,0 +1,187 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  background: #f4efe4;
+  color: #1b1914;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.app {
+  width: 100%;
+  max-width: 375px;
+  margin: 0 auto;
+  padding: 8px 12px 12px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.lead,
+.rule {
+  margin: 0 0 8px;
+}
+
+.lead {
+  font-size: 0.95rem;
+  white-space: pre-line;
+}
+
+.rule {
+  font-size: 0.9rem;
+}
+
+.action {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border: 1px solid #1b1914;
+  background: #1b1914;
+  color: #f4efe4;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.action-secondary {
+  background: #f4efe4;
+  color: #1b1914;
+}
+
+.board {
+  display: grid;
+  gap: 1px;
+  background: #1b1914;
+  border: 1px solid #1b1914;
+  width: max-content;
+  max-width: 100%;
+  margin: 8px auto;
+}
+
+.board-sample {
+  grid-template-columns: repeat(3, 56px);
+}
+
+.board-play {
+  grid-template-columns: repeat(6, 44px);
+}
+
+.cell {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 2px 1px 1px;
+  border: 0;
+  background: #fffaf0;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.board-sample .cell {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+}
+
+.cell-kana {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.cell-body {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-top: 1px;
+}
+
+.cell-stone {
+  background: #cfc4b0;
+}
+
+button.cell {
+  cursor: pointer;
+}
+
+button.cell:disabled {
+  cursor: default;
+}
+
+button.cell.is-pressed {
+  box-shadow: inset 0 0 0 2px #1b1914;
+}
+
+.play-sample-btn {
+  width: auto;
+  min-width: 44px;
+  min-height: 36px;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+}
+
+.result-block {
+  margin-top: 8px;
+}
+
+.result-text {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.share-lines {
+  margin: 0 0 6px;
+  white-space: pre-line;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.copy-status {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+}
+
+dialog.sample-dialog {
+  width: 351px;
+  max-width: calc(100% - 24px);
+  margin: auto;
+  padding: 12px;
+  border: 1px solid #1b1914;
+  background: #f4efe4;
+  color: inherit;
+}
+
+dialog.sample-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+[hidden] {
+  display: none !important;
+}
