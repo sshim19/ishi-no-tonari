@@ -1,0 +1,595 @@
+{
+  "title": "石のとなり",
+  "size": 6,
+  "stoneCount": 6,
+  "shareWin": [
+    "石のとなり",
+    "当たりです"
+  ],
+  "shareLose": [
+    "石のとなり",
+    "今日はここまでです"
+  ],
+  "print": {
+    "uniqueLiePuzzles": 86150240,
+    "dropDisplayZero": 22439040,
+    "dropIsolatedOne": 30709840,
+    "dropUniqueDigit": 6372236,
+    "dropOverDegree": 243040,
+    "dropDegreeFullHole": 3912448,
+    "dropFullNeighborhoodLow": 250480,
+    "dropSandwich": 1582240,
+    "dropLocalBound": 48621888,
+    "dropInstant": 63443208,
+    "remainPuzzles": 22707032,
+    "afterInstantShareKeys": 32,
+    "afterInstantThenModeShareKeys": 31,
+    "positionMode": 14,
+    "positionModeCount": 811491,
+    "positionModeKana": "ソ",
+    "positionModeRegion": "interior",
+    "afterInstantByRegion": {
+      "corner": 0,
+      "edge": 16,
+      "interior": 16
+    },
+    "afterModeByRegion": {
+      "corner": 0,
+      "edge": 16,
+      "interior": 15
+    },
+    "cornerDeltas": [
+      {
+        "actual": 0,
+        "displayed": 1,
+        "type": "isolatedOne",
+        "instant": true
+      },
+      {
+        "actual": 1,
+        "displayed": 0,
+        "type": "displayZero",
+        "instant": true
+      },
+      {
+        "actual": 1,
+        "displayed": 2,
+        "type": "degreeFullHole",
+        "instant": true
+      },
+      {
+        "actual": 2,
+        "displayed": 1,
+        "type": "fullNeighborhoodLow",
+        "instant": true
+      },
+      {
+        "actual": 2,
+        "displayed": 3,
+        "type": "overDegree",
+        "instant": true
+      }
+    ],
+    "afterInstantMeets30": true,
+    "afterStackedMeets30": true,
+    "frozenDays": 30,
+    "deltaSeed": 0,
+    "orderSeed": 0
+  },
+  "droppedModeKana": "ソ",
+  "droppedExtraKanas": [
+    "モ"
+  ],
+  "days": [
+    {
+      "day": 1,
+      "stones": [
+        3,
+        9,
+        20,
+        22,
+        23,
+        24
+      ],
+      "lie": 8,
+      "lieKana": "ケ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 2,
+      "stones": [
+        0,
+        13,
+        14,
+        25,
+        31,
+        34
+      ],
+      "lie": 6,
+      "lieKana": "キ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "edge"
+    },
+    {
+      "day": 3,
+      "stones": [
+        6,
+        7,
+        15,
+        20,
+        24,
+        25
+      ],
+      "lie": 9,
+      "lieKana": "コ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 4,
+      "stones": [
+        3,
+        10,
+        18,
+        25,
+        32,
+        35
+      ],
+      "lie": 4,
+      "lieKana": "オ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "edge"
+    },
+    {
+      "day": 5,
+      "stones": [
+        0,
+        1,
+        16,
+        24,
+        26,
+        34
+      ],
+      "lie": 7,
+      "lieKana": "ク",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 6,
+      "stones": [
+        4,
+        6,
+        9,
+        10,
+        17,
+        33
+      ],
+      "lie": 3,
+      "lieKana": "エ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "edge"
+    },
+    {
+      "day": 7,
+      "stones": [
+        2,
+        3,
+        7,
+        12,
+        20,
+        26
+      ],
+      "lie": 1,
+      "lieKana": "イ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "edge"
+    },
+    {
+      "day": 8,
+      "stones": [
+        5,
+        12,
+        18,
+        19,
+        25,
+        34
+      ],
+      "lie": 33,
+      "lieKana": "メ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "edge"
+    },
+    {
+      "day": 9,
+      "stones": [
+        0,
+        17,
+        26,
+        27,
+        33,
+        34
+      ],
+      "lie": 28,
+      "lieKana": "ヘ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "interior"
+    },
+    {
+      "day": 10,
+      "stones": [
+        1,
+        8,
+        18,
+        23,
+        30,
+        35
+      ],
+      "lie": 2,
+      "lieKana": "ウ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "edge"
+    },
+    {
+      "day": 11,
+      "stones": [
+        0,
+        1,
+        10,
+        11,
+        26,
+        33
+      ],
+      "lie": 32,
+      "lieKana": "ム",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "edge"
+    },
+    {
+      "day": 12,
+      "stones": [
+        7,
+        9,
+        23,
+        25,
+        32,
+        34
+      ],
+      "lie": 29,
+      "lieKana": "ホ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "edge"
+    },
+    {
+      "day": 13,
+      "stones": [
+        10,
+        22,
+        26,
+        31,
+        33,
+        34
+      ],
+      "lie": 27,
+      "lieKana": "フ",
+      "displayed": 3,
+      "actual": 2,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 14,
+      "stones": [
+        2,
+        7,
+        15,
+        18,
+        19,
+        25
+      ],
+      "lie": 31,
+      "lieKana": "ミ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "edge"
+    },
+    {
+      "day": 15,
+      "stones": [
+        3,
+        6,
+        18,
+        22,
+        27,
+        32
+      ],
+      "lie": 26,
+      "lieKana": "ヒ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "interior"
+    },
+    {
+      "day": 16,
+      "stones": [
+        3,
+        13,
+        20,
+        22,
+        26,
+        35
+      ],
+      "lie": 23,
+      "lieKana": "ネ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "edge"
+    },
+    {
+      "day": 17,
+      "stones": [
+        3,
+        23,
+        26,
+        27,
+        34,
+        35
+      ],
+      "lie": 25,
+      "lieKana": "ハ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 18,
+      "stones": [
+        9,
+        16,
+        18,
+        21,
+        23,
+        27
+      ],
+      "lie": 22,
+      "lieKana": "ヌ",
+      "displayed": 2,
+      "actual": 3,
+      "delta": -1,
+      "region": "interior"
+    },
+    {
+      "day": 19,
+      "stones": [
+        8,
+        10,
+        17,
+        18,
+        25,
+        26
+      ],
+      "lie": 24,
+      "lieKana": "ノ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "edge"
+    },
+    {
+      "day": 20,
+      "stones": [
+        0,
+        18,
+        23,
+        25,
+        34,
+        35
+      ],
+      "lie": 19,
+      "lieKana": "ト",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "interior"
+    },
+    {
+      "day": 21,
+      "stones": [
+        11,
+        15,
+        18,
+        19,
+        26,
+        28
+      ],
+      "lie": 21,
+      "lieKana": "ニ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 22,
+      "stones": [
+        0,
+        3,
+        16,
+        20,
+        23,
+        30
+      ],
+      "lie": 17,
+      "lieKana": "ツ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "edge"
+    },
+    {
+      "day": 23,
+      "stones": [
+        2,
+        10,
+        11,
+        13,
+        19,
+        26
+      ],
+      "lie": 20,
+      "lieKana": "ナ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "interior"
+    },
+    {
+      "day": 24,
+      "stones": [
+        4,
+        8,
+        11,
+        15,
+        23,
+        28
+      ],
+      "lie": 16,
+      "lieKana": "チ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 25,
+      "stones": [
+        17,
+        18,
+        22,
+        23,
+        25,
+        30
+      ],
+      "lie": 12,
+      "lieKana": "ス",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "edge"
+    },
+    {
+      "day": 26,
+      "stones": [
+        4,
+        5,
+        11,
+        21,
+        25,
+        27
+      ],
+      "lie": 15,
+      "lieKana": "タ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 27,
+      "stones": [
+        14,
+        19,
+        23,
+        24,
+        27,
+        30
+      ],
+      "lie": 18,
+      "lieKana": "テ",
+      "displayed": 1,
+      "actual": 2,
+      "delta": -1,
+      "region": "edge"
+    },
+    {
+      "day": 28,
+      "stones": [
+        4,
+        6,
+        13,
+        26,
+        29,
+        33
+      ],
+      "lie": 10,
+      "lieKana": "サ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 29,
+      "stones": [
+        0,
+        7,
+        8,
+        11,
+        16,
+        25
+      ],
+      "lie": 13,
+      "lieKana": "セ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "interior"
+    },
+    {
+      "day": 30,
+      "stones": [
+        3,
+        16,
+        17,
+        22,
+        28,
+        32
+      ],
+      "lie": 11,
+      "lieKana": "シ",
+      "displayed": 2,
+      "actual": 1,
+      "delta": 1,
+      "region": "edge"
+    }
+  ]
+}
