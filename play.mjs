@@ -208,15 +208,16 @@ export function judgePress(info, kana) {
 }
 
 /**
- * @param {string} kana
+ * マスの読み上げ。仮名は出さない。行・列は 1 始まり。
+ *
+ * @param {number} row
+ * @param {number} col
  * @param {boolean} stone
  * @param {number | null} value
  */
-export function ariaFor(kana, stone, value) {
-  if (stone) {
-    return `${kana}、石`;
-  }
-  return `${kana}、${value}`;
+export function ariaFor(row, col, stone, value) {
+  const body = stone ? "石" : String(value);
+  return `上から${row}番目、左から${col}番目、${body}`;
 }
 
 /**
@@ -294,8 +295,11 @@ async function boot() {
 
   function fillSample(board) {
     board.replaceChildren();
-    for (const cell of SAMPLE) {
-      board.append(makeCell(cell.kana, cell.stone, cell.stone ? null : cell.value, false, "S3"));
+    for (let i = 0; i < SAMPLE.length; i += 1) {
+      const cell = SAMPLE[i];
+      board.append(
+        makeCell(cell.kana, cell.stone, cell.stone ? null : cell.value, false, "S3", i, 3),
+      );
     }
   }
 
@@ -310,11 +314,11 @@ async function boot() {
       const stone = board[i] === -1;
       const value = stone ? null : board[i];
       const copyId = stone ? "P5" : "P4";
-      playBoard.append(makeCell(kana, stone, value, !stone, copyId));
+      playBoard.append(makeCell(kana, stone, value, !stone, copyId, i, 6));
     }
   }
 
-  function makeCell(kana, stone, value, pressable, copyId) {
+  function makeCell(kana, stone, value, pressable, copyId, index, cols) {
     const el = document.createElement(pressable ? "button" : "div");
     if (pressable) {
       el.type = "button";
@@ -322,14 +326,13 @@ async function boot() {
     el.className = stone ? "cell cell-stone" : "cell";
     el.dataset.kana = kana;
     el.dataset.copyId = copyId;
-    el.setAttribute("aria-label", ariaFor(kana, stone, value));
-    const kanaEl = document.createElement("span");
-    kanaEl.className = "cell-kana";
-    kanaEl.textContent = kana;
+    const row = Math.floor(index / cols) + 1;
+    const col = (index % cols) + 1;
+    el.setAttribute("aria-label", ariaFor(row, col, stone, value));
     const bodyEl = document.createElement("span");
     bodyEl.className = "cell-body";
     bodyEl.textContent = stone ? "石" : String(value);
-    el.append(kanaEl, bodyEl);
+    el.append(bodyEl);
     if (pressable) {
       el.addEventListener("click", () => onPlayPress(kana));
     }
@@ -458,15 +461,9 @@ async function boot() {
 
   function collectCell(el) {
     const rect = el.getBoundingClientRect();
-    const kanaEl = el.querySelector(".cell-kana");
     const bodyEl = el.querySelector(".cell-body");
-    const kanaRect = kanaEl.getBoundingClientRect();
     const bodyRect = bodyEl.getBoundingClientRect();
     const inside =
-      kanaRect.left >= rect.left - 0.5 &&
-      kanaRect.right <= rect.right + 0.5 &&
-      kanaRect.top >= rect.top - 0.5 &&
-      kanaRect.bottom <= rect.bottom + 0.5 &&
       bodyRect.left >= rect.left - 0.5 &&
       bodyRect.right <= rect.right + 0.5 &&
       bodyRect.top >= rect.top - 0.5 &&
@@ -483,7 +480,9 @@ async function boot() {
       top: rect.top,
       right: rect.right,
       bottom: rect.bottom,
-      kanaAndBodyInside: inside,
+      bodyInside: inside,
+      body: bodyEl.textContent,
+      hasKanaSpan: Boolean(el.querySelector(".cell-kana")),
       aria: el.getAttribute("aria-label"),
     };
   }
@@ -613,14 +612,18 @@ async function boot() {
         count: sampleCells.length,
         minShort: sampleCells.length ? sampleMinShort : null,
         gaps: sampleGaps,
-        cellsInside: sampleCells.every((cell) => cell.kanaAndBodyInside),
+        cellsInside: sampleCells.every((cell) => cell.bodyInside),
         pressable: sampleCells.some((cell) => cell.tag === "BUTTON"),
+        hasKanaSpan: sampleCells.some((cell) => cell.hasKanaSpan),
+        ariaOk: sampleCells.every((cell) => /^上から\d+番目、左から\d+番目、/.test(cell.aria || "")),
       },
       play: {
         count: playCells.length,
         minShort: playCells.length ? playMinShort : null,
         gaps: playGaps,
-        cellsInside: playCells.every((cell) => cell.kanaAndBodyInside),
+        cellsInside: playCells.every((cell) => cell.bodyInside),
+        hasKanaSpan: playCells.some((cell) => cell.hasKanaSpan),
+        ariaOk: playCells.every((cell) => /^上から\d+番目、左から\d+番目、/.test(cell.aria || "")),
         stoneButtons: playCells
           .filter((cell) => cell.tag === "BUTTON" && cell.className.includes("cell-stone"))
           .map((cell) => cell.kana),
