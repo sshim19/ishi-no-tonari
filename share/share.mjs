@@ -5,16 +5,28 @@
  */
 
 export const STORAGE_KEY = "ishi-no-tonari.v1";
+export const PUZZLES_PER_DAY = 5;
 
 /** @typedef {"hit" | "miss"} Outcome */
+/** @typedef {(Outcome | null)[]} DayOutcomes */
 
 /**
  * @typedef {{
  *   version: 1,
  *   outcome: Outcome | null,
  *   dateKey?: string,
- * }} SaveRecord
+ * }} SaveRecordV1
  */
+
+/**
+ * @typedef {{
+ *   version: 2,
+ *   dateKey?: string,
+ *   outcomes: DayOutcomes,
+ * }} SaveRecordV2
+ */
+
+/** @typedef {SaveRecordV1 | SaveRecordV2} SaveRecord */
 
 /**
  * @typedef {{
@@ -35,18 +47,91 @@ export const COPY = {
   W5: "石のとなり\n当たりです",
   W6: "コピー",
   W7: "コピーしました",
-  W8: "コピーできませんでした。上の2行は残っています。",
-  L1: "はずれです。今日はここまでです。",
+  W8: "コピーできませんでした。上の3行は残っています。",
+  L1: "はずれです",
   L2: "石のとなり",
   L3: "今日はここまでです",
   L4: "石のとなり\n今日はここまでです",
   L5: "コピー",
   L6: "コピーしました",
-  L7: "コピーできませんでした。上の2行は残っています。",
+  L7: "コピーできませんでした。上の3行は残っています。",
   Z1: "今日の盤はまだありません",
   Z2: "当たりです",
-  Z3: "はずれです。今日はここまでです。",
+  Z3: "はずれです",
+  D1: "5問中3問当たりです。",
+  D5: "石のとなり\n○○×○×\n5問中3問当たりです",
 };
+
+/**
+ * @returns {DayOutcomes}
+ */
+export function emptyOutcomes() {
+  return [null, null, null, null, null];
+}
+
+/**
+ * @param {unknown} outcomes
+ * @returns {DayOutcomes}
+ */
+export function normalizeOutcomes(outcomes) {
+  const next = emptyOutcomes();
+  if (!Array.isArray(outcomes)) {
+    return next;
+  }
+  for (let i = 0; i < PUZZLES_PER_DAY; i += 1) {
+    const value = outcomes[i];
+    if (value === "hit" || value === "miss") {
+      next[i] = value;
+    }
+  }
+  return next;
+}
+
+/**
+ * @param {unknown} outcomes
+ * @returns {boolean}
+ */
+export function dayComplete(outcomes) {
+  const list = normalizeOutcomes(outcomes);
+  return list.every((value) => value === "hit" || value === "miss");
+}
+
+/**
+ * @param {unknown} outcomes
+ * @returns {number}
+ */
+export function firstOpenSlot(outcomes) {
+  const list = normalizeOutcomes(outcomes);
+  return list.findIndex((value) => value !== "hit" && value !== "miss");
+}
+
+/**
+ * @param {unknown} outcomes
+ * @returns {number}
+ */
+export function hitCount(outcomes) {
+  return normalizeOutcomes(outcomes).filter((value) => value === "hit").length;
+}
+
+/**
+ * 進捗の代表は 02-copy P10「3問目／5問」。slot は 0 始まり。
+ *
+ * @param {number} slot
+ * @returns {string}
+ */
+export function progressLine(slot) {
+  return `${slot + 1}問目／${PUZZLES_PER_DAY}問`;
+}
+
+/**
+ * 画面の1日まとめ。代表は 02-copy D1。句点あり。
+ *
+ * @param {unknown} outcomes
+ * @returns {string}
+ */
+export function summaryLine(outcomes) {
+  return `${PUZZLES_PER_DAY}問中${hitCount(outcomes)}問当たりです。`;
+}
 
 /**
  * @param {Outcome | null | undefined} outcome
@@ -56,6 +141,22 @@ export function buildShareText(outcome) {
   if (outcome === "hit") return COPY.W5;
   if (outcome === "miss") return COPY.L4;
   return "";
+}
+
+/**
+ * 1日5問が揃ったあとの共有。代表は 02-copy D5。答えのマスは出さない。
+ *
+ * @param {unknown} outcomes
+ * @returns {string}
+ */
+export function buildDayShareText(outcomes) {
+  if (!dayComplete(outcomes)) {
+    return "";
+  }
+  const marks = normalizeOutcomes(outcomes)
+    .map((value) => (value === "hit" ? "○" : "×"))
+    .join("");
+  return `石のとなり\n${marks}\n${PUZZLES_PER_DAY}問中${hitCount(outcomes)}問当たりです`;
 }
 
 /**
@@ -121,6 +222,16 @@ export function parseRecord(raw) {
     if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
       return { version: 1, outcome: null };
     }
+    if (parsed.version === 2) {
+      const dateKey =
+        typeof parsed.dateKey === "string" && parsed.dateKey !== ""
+          ? parsed.dateKey
+          : undefined;
+      /** @type {SaveRecordV2} */
+      const out = { version: 2, outcomes: normalizeOutcomes(parsed.outcomes) };
+      if (dateKey) out.dateKey = dateKey;
+      return out;
+    }
     const outcome =
       parsed.outcome === "hit" || parsed.outcome === "miss" ? parsed.outcome : null;
     const dateKey =
@@ -141,7 +252,15 @@ export function parseRecord(raw) {
  * @returns {string}
  */
 export function serializeRecord(record) {
-  /** @type {SaveRecord} */
+  if (record.version === 2) {
+    /** @type {SaveRecordV2} */
+    const out = { version: 2, outcomes: normalizeOutcomes(record.outcomes) };
+    if (typeof record.dateKey === "string" && record.dateKey !== "") {
+      out.dateKey = record.dateKey;
+    }
+    return JSON.stringify(out);
+  }
+  /** @type {SaveRecordV1} */
   const out = { version: 1, outcome: null };
   if (record.outcome === "hit" || record.outcome === "miss") {
     out.outcome = record.outcome;
@@ -167,6 +286,15 @@ export function loadRecord(storage, options) {
     raw = null;
   }
   const record = parseRecord(raw);
+  if (record.version === 2) {
+    if (!daily) {
+      return { version: 2, outcomes: record.outcomes };
+    }
+    if (record.dateKey === todayKey) {
+      return record;
+    }
+    return { version: 2, dateKey: todayKey, outcomes: emptyOutcomes() };
+  }
   if (!daily) {
     return { version: 1, outcome: record.outcome };
   }
@@ -174,6 +302,21 @@ export function loadRecord(storage, options) {
     return { version: 1, outcome: record.outcome, dateKey: record.dateKey };
   }
   return { version: 1, outcome: null };
+}
+
+/**
+ * 暦日ごとの 5 問。スロットは 0 始まり。埋まっているマスは上書きしない。
+ *
+ * @param {{ getItem: (key: string) => string | null }} storage
+ * @param {string} dateKey
+ * @returns {SaveRecordV2}
+ */
+export function loadDayRecord(storage, dateKey) {
+  const record = loadRecord(storage, { daily: true, todayKey: dateKey });
+  if (record.version === 2 && record.dateKey === dateKey) {
+    return record;
+  }
+  return { version: 2, dateKey, outcomes: emptyOutcomes() };
 }
 
 /**
@@ -191,9 +334,12 @@ export function saveOutcome(storage, outcome, options) {
   const daily = Boolean(options?.daily);
   const todayKey = options?.todayKey ?? "";
   const current = loadRecord(storage, options);
+  if (current.version === 2) {
+    return current;
+  }
   if (current.outcome) return current;
   if (outcome !== "hit" && outcome !== "miss") return current;
-  /** @type {SaveRecord} */
+  /** @type {SaveRecordV1} */
   const next = daily
     ? { version: 1, outcome, dateKey: todayKey }
     : { version: 1, outcome };
@@ -207,11 +353,54 @@ export function saveOutcome(storage, outcome, options) {
 
 /**
  * @param {{
+ *   getItem: (key: string) => string | null,
+ *   setItem: (key: string, value: string) => void,
+ * }} storage
+ * @param {string} dateKey
+ * @param {number} slot
+ * @param {Outcome} outcome
+ * @returns {SaveRecordV2}
+ */
+export function saveSlot(storage, dateKey, slot, outcome) {
+  const current = loadDayRecord(storage, dateKey);
+  if (outcome !== "hit" && outcome !== "miss") return current;
+  if (!Number.isInteger(slot) || slot < 0 || slot >= PUZZLES_PER_DAY) {
+    return current;
+  }
+  if (current.outcomes[slot]) return current;
+  const outcomes = normalizeOutcomes(current.outcomes);
+  outcomes[slot] = outcome;
+  /** @type {SaveRecordV2} */
+  const next = { version: 2, dateKey, outcomes };
+  try {
+    storage.setItem(STORAGE_KEY, serializeRecord(next));
+    return next;
+  } catch {
+    return current;
+  }
+}
+
+/**
+ * @param {SaveRecord | null | undefined} record
+ * @returns {Outcome | null}
+ */
+function slotOutcome(record, slot) {
+  if (!record) return null;
+  if (record.version === 2) {
+    const value = record.outcomes[slot];
+    return value === "hit" || value === "miss" ? value : null;
+  }
+  return record.outcome === "hit" || record.outcome === "miss" ? record.outcome : null;
+}
+
+/**
+ * @param {{
  *   hasBoard: boolean,
  *   daily: boolean,
  *   record: SaveRecord | null | undefined,
  *   copyState?: "" | "ok" | "fail",
  *   streak?: number,
+ *   slot?: number,
  * }} input
  * @returns {ShareView}
  */
@@ -233,7 +422,41 @@ export function viewModel(input) {
     };
   }
 
-  const outcome = input.record?.outcome ?? null;
+  const record = input.record;
+  if (record?.version === 2) {
+    if (dayComplete(record.outcomes)) {
+      return {
+        empty: "",
+        result: summaryLine(record.outcomes),
+        share: buildDayShareText(record.outcomes),
+        copyLabel: COPY.W6,
+        copyStatus: copyStatusText(input.copyState),
+        extras,
+      };
+    }
+    const slot = Number.isInteger(input.slot) ? input.slot : firstOpenSlot(record.outcomes);
+    const outcome = slotOutcome(record, slot);
+    if (outcome !== "hit" && outcome !== "miss") {
+      return {
+        empty: "",
+        result: "",
+        share: "",
+        copyLabel: "",
+        copyStatus: "",
+        extras,
+      };
+    }
+    return {
+      empty: "",
+      result: resultText(outcome),
+      share: "",
+      copyLabel: "",
+      copyStatus: "",
+      extras,
+    };
+  }
+
+  const outcome = record?.outcome ?? null;
   if (outcome !== "hit" && outcome !== "miss") {
     return {
       empty: "",
