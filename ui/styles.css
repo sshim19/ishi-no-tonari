@@ -519,47 +519,84 @@ button.cell.is-pending.cell-memo-red {
   margin: 0;
 }
 
+/* Hint-revealed safe cell: the stone block is gone, leaving a recessed pit. */
 .cell.cell-hint-safe,
 button.cell.cell-hint-safe {
+  --hint-pit:
+    radial-gradient(ellipse 90% 80% at 50% 100%, rgb(0 0 0 / 0.3) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 40% at 38% 72%, rgb(90 68 42 / 0.38) 0%, transparent 70%),
+    linear-gradient(180deg, #16100b 0%, #24180f 38%, #332416 100%);
+  --hint-pit-shadow:
+    inset 0 6px 10px rgb(0 0 0 / 0.62),
+    inset 0 -2px 3px rgb(140 110 70 / 0.16),
+    inset 5px 0 6px rgb(0 0 0 / 0.35),
+    inset -4px 0 5px rgb(0 0 0 / 0.28),
+    inset 0 0 0 2px #21160f,
+    inset 0 0 0 3px #5a4532;
   position: relative;
-  box-shadow:
-    inset 0 1px 0 #fff8e6,
-    inset 0 0 0 2px #4a5e78,
-    0 1px 2px rgb(40 25 10 / 0.3);
+  background: var(--hint-pit);
+  box-shadow: var(--hint-pit-shadow);
+}
+
+.cell.cell-hint-safe .cell-body {
+  position: relative;
+  z-index: 1;
+  color: #f4ead0;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.85), 0 0 3px rgb(0 0 0 / 0.55);
 }
 
 .cell.cell-hint-safe::after {
   content: "";
   position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 9px;
-  height: 9px;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Ccircle cx='5' cy='5' r='4.5' fill='%23efe6cf' stroke='%23384a62' stroke-width='1'/%3E%3Cpath fill='none' stroke='%23384a62' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round' d='M3 5.2l1.4 1.5 2.6-3.2'/%3E%3C/svg%3E") center / contain no-repeat;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 0 rgb(12 8 5 / 0.7),
+    inset 0 -1px 0 rgb(170 140 95 / 0.18);
 }
 
 .cell.cell-memo-green.cell-hint-safe,
-button.cell.cell-memo-green.cell-hint-safe,
+button.cell.cell-memo-green.cell-hint-safe {
+  --hint-pit:
+    radial-gradient(ellipse 90% 80% at 50% 100%, rgb(0 0 0 / 0.3) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 40% at 38% 72%, rgb(80 105 45 / 0.42) 0%, transparent 70%),
+    linear-gradient(180deg, #14180c 0%, #243018 38%, #334424 100%);
+}
+
 .cell.cell-memo-red.cell-hint-safe,
 button.cell.cell-memo-red.cell-hint-safe {
-  box-shadow:
-    inset 0 1px 0 #fff8e6,
-    inset 0 0 0 2px #4a5e78,
-    0 1px 2px rgb(40 25 10 / 0.3);
+  --hint-pit:
+    radial-gradient(ellipse 90% 80% at 50% 100%, rgb(0 0 0 / 0.3) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 40% at 38% 72%, rgb(130 55 35 / 0.42) 0%, transparent 70%),
+    linear-gradient(180deg, #1a0e0a 0%, #3a1c14 38%, #4e2c1c 100%);
+}
+
+.cell.cell-memo-green.cell-hint-safe .cell-body,
+.cell.cell-memo-red.cell-hint-safe .cell-body {
+  color: #f4ead0;
 }
 
 button.cell.is-pending.cell-hint-safe {
+  background: var(--hint-pit);
   box-shadow:
-    inset 0 1px 0 #fff8e6,
-    inset 0 0 0 3px #6b4a28,
-    0 0 0 1px #f3e6c8;
+    var(--hint-pit-shadow),
+    0 0 0 2px #6b4a28,
+    0 0 0 3px #f3e6c8;
 }
 
 button.cell.is-pressed.cell-hint-safe {
+  filter: none;
+  background: var(--hint-pit);
   box-shadow:
-    inset 0 2px 4px rgb(60 40 15 / 0.45),
-    inset 0 0 0 2px #5c4328;
+    inset 0 7px 11px rgb(0 0 0 / 0.7),
+    inset 0 -2px 3px rgb(140 110 70 / 0.1),
+    inset 5px 0 6px rgb(0 0 0 / 0.4),
+    inset -4px 0 5px rgb(0 0 0 / 0.32),
+    inset 0 0 0 2px #1a120c,
+    inset 0 0 0 3px #4a3828,
+    0 0 0 2px #5c4328;
 }
 
 .cell.cell-hint-opening {
@@ -580,18 +617,20 @@ button.cell.is-pressed.cell-hint-safe {
   z-index: 0;
   pointer-events: none;
   border-radius: inherit;
-  background: linear-gradient(165deg, #d4c49a 0%, #b89a6c 48%, #8d734c 100%);
+  background: linear-gradient(165deg, #f6edd8 0%, #e6d4b0 55%, #d4c094 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 248 230 / 0.4),
-    inset 0 -2px 3px rgb(40 25 10 / 0.3);
+    inset 0 1px 0 #fff8e6,
+    inset 0 -2px 2px rgb(90 60 20 / 0.22);
   animation: hint-open-cover 440ms cubic-bezier(0.4, 0.12, 0.2, 1) both;
   animation-delay: var(--hint-open-delay, 0ms);
 }
 
-.cell.cell-hint-opening::after {
-  z-index: 2;
-  animation: hint-open-badge 360ms cubic-bezier(0.2, 1.15, 0.3, 1) both;
-  animation-delay: calc(var(--hint-open-delay, 0ms) + 80ms);
+.cell.cell-memo-green.cell-hint-opening::before {
+  background: linear-gradient(165deg, #d7e6b4 0%, #b7c984 55%, #9aaf68 100%);
+}
+
+.cell.cell-memo-red.cell-hint-opening::before {
+  background: linear-gradient(165deg, #f0c4b0 0%, #e09a7c 55%, #d08064 100%);
 }
 
 @keyframes hint-open {
@@ -599,25 +638,35 @@ button.cell.is-pressed.cell-hint-safe {
     transform: scale(0.94) translateY(2px);
     filter: brightness(0.92);
     box-shadow:
-      inset 0 2px 4px rgb(40 25 10 / 0.4),
-      inset 0 0 0 2px #4a5e78,
-      0 0 0 0 rgb(210 190 140 / 0);
+      inset 0 6px 10px rgb(0 0 0 / 0.72),
+      inset 0 -2px 3px rgb(140 110 70 / 0.08),
+      inset 5px 0 6px rgb(0 0 0 / 0.4),
+      inset -4px 0 5px rgb(0 0 0 / 0.32),
+      inset 0 0 0 2px #21160f,
+      inset 0 0 0 3px #5a4532;
   }
   55% {
     transform: scale(1.04) translateY(-1px);
-    filter: brightness(1.08);
+    filter: brightness(1.1);
     box-shadow:
-      inset 0 1px 0 #fff8e6,
-      inset 0 0 0 2px #6a86a8,
+      inset 0 5px 8px rgb(0 0 0 / 0.5),
+      inset 0 -2px 3px rgb(180 150 100 / 0.22),
+      inset 5px 0 6px rgb(0 0 0 / 0.3),
+      inset -4px 0 5px rgb(0 0 0 / 0.22),
+      inset 0 0 0 2px #21160f,
+      inset 0 0 0 3px #6a5440,
       0 0 10px 2px rgb(210 190 140 / 0.42);
   }
   100% {
     transform: none;
     filter: none;
     box-shadow:
-      inset 0 1px 0 #fff8e6,
-      inset 0 0 0 2px #4a5e78,
-      0 1px 2px rgb(40 25 10 / 0.3);
+      inset 0 6px 10px rgb(0 0 0 / 0.62),
+      inset 0 -2px 3px rgb(140 110 70 / 0.16),
+      inset 5px 0 6px rgb(0 0 0 / 0.35),
+      inset -4px 0 5px rgb(0 0 0 / 0.28),
+      inset 0 0 0 2px #21160f,
+      inset 0 0 0 3px #5a4532;
   }
 }
 
@@ -630,25 +679,9 @@ button.cell.is-pressed.cell-hint-safe {
   }
 }
 
-@keyframes hint-open-badge {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  70% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .cell.cell-hint-opening,
-  .cell.cell-hint-opening::before,
-  .cell.cell-hint-opening::after {
+  .cell.cell-hint-opening::before {
     animation: none;
   }
 
