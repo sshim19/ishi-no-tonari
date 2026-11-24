@@ -94,10 +94,10 @@ export const FORBIDDEN = [
 ];
 
 /**
- * 公開開始日（Asia/Tokyo の暦日）。01-spec は「日付は JST の暦日」と
- * 在庫が尽きた日は Z1 と書く。開始日の暦対応は正本に無いのでここ1か所。
+ * 公開開始日（Asia/Tokyo の暦日）。開始日の暦対応は正本に無いのでここ1か所。
  * 2026-11-16 JST をフリーズ日1とし、以降1日ずつ進む。
- * 1暦日は在庫 5 問なので、遊べる暦日は 1〜6。日7以降と開始前は Z1。
+ * 1暦日は在庫 5 問、フリーズ分は 6 暦日。開始前は Z1。
+ * 日7以降は ((暦日-1) % 6)+1 で在庫を周回する。保存キーは実暦日のまま。
  */
 export const START_DATE_JST = "2026-11-16";
 export const PLAYABLE_CALENDAR_DAYS = 6;
@@ -195,7 +195,8 @@ function emptyDay() {
 }
 
 /**
- * 暦日 N は在庫 5N-4 から 5N。日 1〜6 だけ盤がある。
+ * 暦日 N の盤は、周回後の有効日 E=((N-1)%6)+1 の在庫 5E-4 から 5E。
+ * 開始前（N<1）は盤なし。保存の day / calendarDay は実暦日 N のまま。
  *
  * @param {{ days?: unknown }} stock
  * @param {{
@@ -221,14 +222,12 @@ export function selectDay(stock, params) {
   } else {
     calendarDay = requested;
   }
-  if (
-    !Number.isInteger(calendarDay) ||
-    calendarDay < 1 ||
-    calendarDay > PLAYABLE_CALENDAR_DAYS
-  ) {
+  if (!Number.isInteger(calendarDay) || calendarDay < 1) {
     return emptyDay();
   }
-  const start = (calendarDay - 1) * PUZZLES_PER_DAY;
+  const effectiveDay =
+    ((calendarDay - 1) % PLAYABLE_CALENDAR_DAYS) + 1;
+  const start = (effectiveDay - 1) * PUZZLES_PER_DAY;
   const slice = stock.days.slice(start, start + PUZZLES_PER_DAY);
   if (slice.length !== PUZZLES_PER_DAY) {
     return emptyDay();
