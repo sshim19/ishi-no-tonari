@@ -442,3 +442,54 @@ button.cell.is-pending {
   width: 100%;
   margin: 0;
 }
+
+.answer-hint {
+  margin: 0 0 8px;
+}
+
+#btn-answer {
+  display: block;
+  width: fit-content;
+  min-width: 120px;
+  min-height: 44px;
+  margin: 10px auto 0;
+  padding: 8px 24px;
+}
+
+#btn-answer.is-active {
+  background: linear-gradient(180deg, #c9b17e 0%, #a88954 100%);
+  box-shadow:
+    inset 0 2px 3px rgb(80 50 20 / 0.35),
+    0 1px 0 #6a4a2c;
+}
+
+#screen-play.is-answer-mode .board-play {
+  box-shadow:
+    inset 0 2px 4px rgb(0 0 0 / 0.35),
+    0 2px 0 #d9c7a0,
+    0 0 0 3px #6b4a28,
+    0 4px 12px rgb(40 25 10 / 0.4);
+}
+
+.cell.cell-memo-green,
+button.cell.cell-memo-green {
+  background: linear-gradient(165deg, #d7e6b4 0%, #b7c984 55%, #9aaf68 100%);
+}
+
+.cell.cell-memo-red,
+button.cell.cell-memo-red {
+  background: linear-gradient(165deg, #f0c4b0 0%, #e09a7c 55%, #d08064 100%);
+}
+
+.cell.cell-memo-green .cell-body,
+.cell.cell-memo-red .cell-body {
+  color: #2a1c0e;
+}
+
+button.cell.is-pending.cell-memo-green,
+button.cell.is-pending.cell-memo-red {
+  box-shadow:
+    inset 0 1px 0 #fff8e6,
+    inset 0 0 0 3px #6b4a28,
+    0 0 0 1px #f3e6c8;
+}
