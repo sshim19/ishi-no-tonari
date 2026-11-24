@@ -39,11 +39,13 @@
       <section id="screen-play" hidden>
         <h1 data-copy-id="P1" tabindex="-1">石のとなり</h1>
         <button type="button" class="action action-secondary play-sample-btn" data-copy-id="S6" id="btn-s6" hidden>見本を見る</button>
-        <p class="progress" id="play-progress" data-copy-id="P10">3問目／5問</p>
-        <p class="lead" data-copy-id="P2">石は6個ありますが、見えません。
+        <div class="prompt-banner">
+          <p class="progress" id="play-progress" data-copy-id="P10">3問目／5問</p>
+          <p class="lead" data-copy-id="P2">石は6個ありますが、見えません。
 どのマスにも、上下左右の石の数があります。
 斜めは数えません。うその数字が1つだけあります。</p>
-        <p class="rule" data-copy-id="P3">マスを押すのは1回だけです。</p>
+          <p class="rule" data-copy-id="P3">マスを押すのは1回だけです。</p>
+        </div>
         <div class="board board-play" id="play-board" role="group" aria-label="たて6、よこ6の盤"></div>
         <div class="result-block" id="result-block" hidden>
           <p class="result-text" id="result-text" data-copy-id="W1" aria-live="polite" tabindex="-1"></p>
