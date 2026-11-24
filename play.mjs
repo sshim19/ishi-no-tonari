@@ -76,6 +76,10 @@ export const SCREEN_COPY = {
   C4: "やめる",
   A1: "答え",
   A2: "うそのマスを選んでください",
+  H1: "ヒント",
+  H2: "ヒントを選んでください",
+  H3: "本当のマスを1つ開ける",
+  H4: "本当の行を一列開ける",
 };
 
 export const FORBIDDEN = [
@@ -305,6 +309,80 @@ export function judgePress(info, kana) {
 }
 
 /**
+ * ヒント用。石でもうそでもなく、まだ開いていない本当のマスを1つ選ぶ。
+ *
+ * @param {{ occupied?: ArrayLike<number>, lie?: number } | null} info
+ * @param {Iterable<string>} [alreadyHinted]
+ * @param {() => number} [rand]
+ * @returns {string | null}
+ */
+export function pickHintCell(info, alreadyHinted = [], rand = Math.random) {
+  if (!info || !Number.isInteger(info.lie)) {
+    return null;
+  }
+  const hinted = alreadyHinted instanceof Set ? alreadyHinted : new Set(alreadyHinted);
+  const candidates = [];
+  for (let i = 0; i < CELL_KANA.length; i += 1) {
+    if (info.occupied?.[i]) {
+      continue;
+    }
+    if (i === info.lie) {
+      continue;
+    }
+    const kana = CELL_KANA[i];
+    if (hinted.has(kana)) {
+      continue;
+    }
+    candidates.push(kana);
+  }
+  if (candidates.length === 0) {
+    return null;
+  }
+  const index = Math.floor(rand() * candidates.length);
+  return candidates[Math.min(Math.max(index, 0), candidates.length - 1)];
+}
+
+/**
+ * ヒント用。うそマスを含まない、まだ開いていない行を1つ選ぶ。行は 0 始まり。
+ *
+ * @param {{ lie?: number } | null} info
+ * @param {Iterable<number>} [alreadyHintedRows]
+ * @param {() => number} [rand]
+ * @returns {number | null}
+ */
+export function pickHintRow(info, alreadyHintedRows = [], rand = Math.random) {
+  if (!info || !Number.isInteger(info.lie)) {
+    return null;
+  }
+  const hinted = alreadyHintedRows instanceof Set ? alreadyHintedRows : new Set(alreadyHintedRows);
+  const lieRow = Math.floor(info.lie / 6);
+  const candidates = [];
+  for (let r = 0; r < 6; r += 1) {
+    if (r === lieRow || hinted.has(r)) {
+      continue;
+    }
+    candidates.push(r);
+  }
+  if (candidates.length === 0) {
+    return null;
+  }
+  const index = Math.floor(rand() * candidates.length);
+  return candidates[Math.min(Math.max(index, 0), candidates.length - 1)];
+}
+
+/**
+ * @param {number} row
+ * @returns {string[]}
+ */
+export function rowKanas(row) {
+  if (!Number.isInteger(row) || row < 0 || row > 5) {
+    return [];
+  }
+  const start = row * 6;
+  return CELL_KANA.slice(start, start + 6);
+}
+
+/**
  * マスの見た目と押せるか。石を隠す版はここだけ差し替える。
  * いまは石マスに「石」を出し、数字マスだけ押せる。
  *
@@ -421,6 +499,12 @@ async function boot() {
   const playRule = document.querySelector("#screen-play [data-copy-id='P3']");
   const answerHint = document.getElementById("answer-hint");
   const btnAnswer = document.getElementById("btn-answer");
+  const btnHint = document.getElementById("btn-hint");
+  const hintDialog = document.getElementById("hint-dialog");
+  const hintTitle = document.getElementById("hint-title");
+  const btnHintCell = document.getElementById("btn-hint-cell");
+  const btnHintRow = document.getElementById("btn-hint-row");
+  const btnHintCancel = document.getElementById("btn-hint-cancel");
 
   const params = parsePlayParams(globalThis.location.search, currentNowMs());
   const selected = selectDay(stockJson, params);
@@ -435,6 +519,11 @@ async function boot() {
   let answerMode = false;
   /** @type {Record<string, "green" | "red">} */
   let memos = Object.create(null);
+  /** @type {Set<string>} */
+  let hinted = new Set();
+  /** @type {Set<number>} */
+  let hintedRows = new Set();
+  let hintRestoreFocus = true;
   /** @type {"" | "ok" | "fail"} */
   let copyState = "";
   const returnVisit = params.visit2 || introSeen();
@@ -511,6 +600,7 @@ async function boot() {
       const face = cellFace({ stone, value, revealed });
       const el = makeCell(kana, face, i, 6);
       applyMemoClass(el, kana);
+      applyHintClass(el, kana);
       playBoard.append(el);
     }
   }
@@ -577,6 +667,7 @@ async function boot() {
     if (playRule) playRule.hidden = compact;
     btnS6.hidden = !returnVisit || compact;
     renderAnswerChrome();
+    renderHintChrome();
   }
 
   function applyMemoClass(el, kana) {
@@ -619,6 +710,133 @@ async function boot() {
       answerHint.hidden = !answering;
     }
     screenPlay.classList.toggle("is-answer-mode", answering);
+  }
+
+  function applyHintClass(el, kana) {
+    const on = hinted.has(kana);
+    el.classList.toggle("cell-hint-safe", on);
+    const aria = el.getAttribute("aria-label") || "";
+    const base = aria.replace(/、本当$/, "");
+    if (base) {
+      el.setAttribute("aria-label", on ? `${base}、本当` : base);
+    }
+  }
+
+  function applyHintsToBoard() {
+    for (const el of playBoard.querySelectorAll(".cell")) {
+      applyHintClass(el, el.dataset.kana);
+    }
+  }
+
+  function currentHintInfo() {
+    return currentPuzzle()?.info ?? null;
+  }
+
+  function hintCellAvailable() {
+    return pickHintCell(currentHintInfo(), hinted) != null;
+  }
+
+  function hintRowAvailable() {
+    return pickHintRow(currentHintInfo(), hintedRows) != null;
+  }
+
+  function renderHintChrome() {
+    if (!btnHint) {
+      return;
+    }
+    const committed = Boolean(slotOutcome());
+    btnHint.hidden = committed;
+    btnHint.disabled = committed || (!hintCellAvailable() && !hintRowAvailable());
+  }
+
+  function anyOverlayOpen() {
+    return Boolean(sampleDialog.open || confirmDialog.open || (hintDialog && hintDialog.open));
+  }
+
+  function syncOverlay() {
+    overlay = anyOverlayOpen();
+    if (!overlay) {
+      screenPlay.inert = false;
+    }
+  }
+
+  function closeHint(options = {}) {
+    const restore = options.restoreFocus !== false;
+    hintRestoreFocus = restore;
+    if (hintDialog && hintDialog.open) {
+      hintDialog.close();
+      return;
+    }
+    syncOverlay();
+    if (restore && btnHint && typeof btnHint.focus === "function") {
+      btnHint.focus();
+    }
+  }
+
+  function openHintMenu() {
+    if (!hintDialog || slotOutcome()) {
+      return;
+    }
+    const cellOk = hintCellAvailable();
+    const rowOk = hintRowAvailable();
+    if (btnHintCell) {
+      btnHintCell.disabled = !cellOk;
+    }
+    if (btnHintRow) {
+      btnHintRow.disabled = !rowOk;
+    }
+    if (!cellOk && !rowOk) {
+      renderHintChrome();
+      return;
+    }
+    overlay = true;
+    screenPlay.inert = true;
+    hintRestoreFocus = true;
+    hintDialog.showModal();
+    if (hintTitle) {
+      hintTitle.focus();
+    }
+  }
+
+  function revealHintCell() {
+    const kana = pickHintCell(currentHintInfo(), hinted);
+    if (!kana) {
+      return false;
+    }
+    hinted.add(kana);
+    applyHintsToBoard();
+    renderHintChrome();
+    return true;
+  }
+
+  function revealHintRow() {
+    const row = pickHintRow(currentHintInfo(), hintedRows);
+    if (row == null) {
+      return false;
+    }
+    hintedRows.add(row);
+    for (const kana of rowKanas(row)) {
+      hinted.add(kana);
+    }
+    applyHintsToBoard();
+    renderHintChrome();
+    return true;
+  }
+
+  function onHintCell() {
+    revealHintCell();
+    closeHint({ restoreFocus: false });
+    if (btnHint && !btnHint.hidden && typeof btnHint.focus === "function") {
+      btnHint.focus();
+    }
+  }
+
+  function onHintRow() {
+    revealHintRow();
+    closeHint({ restoreFocus: false });
+    if (btnHint && !btnHint.hidden && typeof btnHint.focus === "function") {
+      btnHint.focus();
+    }
   }
 
   function renderResult() {
@@ -696,10 +914,7 @@ async function boot() {
   function resetConfirmState() {
     const last = pendingKana;
     pendingKana = null;
-    overlay = sampleDialog.open;
-    if (!sampleDialog.open) {
-      screenPlay.inert = false;
-    }
+    syncOverlay();
     markPendingCell(null);
     if (confirmRestoreFocus && last) {
       const el = playBoard.querySelector(`[data-kana="${last}"]`);
@@ -741,6 +956,7 @@ async function boot() {
     const outcome = judged.win ? "hit" : "miss";
     saveSlot(storage, dateKey, slotIndex, outcome);
     pressed = kana;
+    answerMode = false;
     fillPlay();
     lockPlayBoard(kana);
     copyState = "";
@@ -789,6 +1005,8 @@ async function boot() {
     copyState = "";
     answerMode = false;
     memos = Object.create(null);
+    hinted = new Set();
+    hintedRows = new Set();
     fillPlay();
     if (slotOutcome()) {
       lockPlayBoard(null);
@@ -883,6 +1101,7 @@ async function boot() {
       app,
       sampleDialog.open ? sampleDialog : null,
       confirmDialog.open ? confirmDialog : null,
+      hintDialog && hintDialog.open ? hintDialog : null,
     ].filter(Boolean);
     for (const root of roots) {
       for (const el of root.querySelectorAll("[data-copy-id]")) {
@@ -984,7 +1203,14 @@ async function boot() {
         play: !screenPlay.hidden,
         overlay: sampleDialog.open,
         confirm: confirmDialog.open,
+        hint: Boolean(hintDialog && hintDialog.open),
         pendingKana,
+        hintedKanas: [...hinted],
+        hintedRows: [...hintedRows],
+        hintVisible: Boolean(btnHint) && !btnHint.hidden,
+        hintDisabled: Boolean(btnHint) && btnHint.disabled,
+        answerVisible: Boolean(btnAnswer) && !btnAnswer.hidden,
+        answerMode,
         returnVisit,
         pressed,
         resultVisible: !resultBlock.hidden,
@@ -1066,10 +1292,7 @@ async function boot() {
   btnS6.addEventListener("click", openSampleOverlay);
   btnS7.addEventListener("click", closeSampleOverlay);
   sampleDialog.addEventListener("close", () => {
-    overlay = confirmDialog.open;
-    if (!confirmDialog.open) {
-      screenPlay.inert = false;
-    }
+    syncOverlay();
   });
   btnConfirmOk.addEventListener("click", onConfirmOk);
   btnConfirmCancel.addEventListener("click", () => closeConfirm());
@@ -1093,6 +1316,37 @@ async function boot() {
         return;
       }
       setAnswerMode(!answerMode);
+    });
+  }
+  if (btnHint) {
+    btnHint.addEventListener("click", () => {
+      if (overlay || slotOutcome()) {
+        return;
+      }
+      openHintMenu();
+    });
+  }
+  if (btnHintCell) {
+    btnHintCell.addEventListener("click", onHintCell);
+  }
+  if (btnHintRow) {
+    btnHintRow.addEventListener("click", onHintRow);
+  }
+  if (btnHintCancel) {
+    btnHintCancel.addEventListener("click", () => closeHint());
+  }
+  if (hintDialog) {
+    hintDialog.addEventListener("close", () => {
+      const restore = hintRestoreFocus;
+      syncOverlay();
+      if (restore && btnHint && !btnHint.hidden && typeof btnHint.focus === "function") {
+        btnHint.focus();
+      }
+    });
+    hintDialog.addEventListener("click", (event) => {
+      if (event.target === hintDialog) {
+        closeHint();
+      }
     });
   }
 

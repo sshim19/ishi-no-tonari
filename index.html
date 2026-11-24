@@ -48,7 +48,10 @@
         </div>
         <p class="rule answer-hint" data-copy-id="A2" id="answer-hint" hidden>うそのマスを選んでください</p>
         <div class="board board-play" id="play-board" role="group" aria-label="たて6、よこ6の盤"></div>
-        <button type="button" class="action" data-copy-id="A1" id="btn-answer">答え</button>
+        <div class="play-actions">
+          <button type="button" class="action action-secondary" data-copy-id="H1" id="btn-hint">ヒント</button>
+          <button type="button" class="action" data-copy-id="A1" id="btn-answer">答え</button>
+        </div>
         <div class="result-block" id="result-block" hidden>
           <p class="result-text" id="result-text" data-copy-id="W1" aria-live="polite" tabindex="-1"></p>
           <p class="share-lines" id="share-lines" data-copy-id="D5" hidden></p>
@@ -77,6 +80,15 @@
       <div class="confirm-actions">
         <button type="button" class="action action-secondary" data-copy-id="C4" id="btn-confirm-cancel">やめる</button>
         <button type="button" class="action" data-copy-id="C3" id="btn-confirm-ok">決める</button>
+      </div>
+    </dialog>
+
+    <dialog class="sample-dialog confirm-dialog hint-dialog" id="hint-dialog" aria-labelledby="hint-title">
+      <p class="lead" data-copy-id="H2" id="hint-title" tabindex="-1">ヒントを選んでください</p>
+      <div class="hint-actions">
+        <button type="button" class="action" data-copy-id="H3" id="btn-hint-cell">本当のマスを1つ開ける</button>
+        <button type="button" class="action" data-copy-id="H4" id="btn-hint-row">本当の行を一列開ける</button>
+        <button type="button" class="action action-secondary" data-copy-id="C4" id="btn-hint-cancel">やめる</button>
       </div>
     </dialog>
 
