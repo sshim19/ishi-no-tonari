@@ -105,7 +105,7 @@ export const FORBIDDEN = [
  * 日7以降は ((暦日-1) % 6)+1 で在庫を周回する。保存キーは実暦日のまま。
  */
 export const START_DATE_JST = "2026-11-16";
-export const PLAYABLE_CALENDAR_DAYS = 6;
+export const PLAYABLE_CALENDAR_DAYS = 24;
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
