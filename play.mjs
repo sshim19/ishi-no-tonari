@@ -623,6 +623,7 @@ async function boot() {
     if (face.pressable) {
       el.addEventListener("click", () => onPlayPress(kana));
     }
+    el.addEventListener("animationend", onHintOpenAnimationEnd);
     return el;
   }
 
@@ -728,6 +729,40 @@ async function boot() {
     }
   }
 
+  function prefersReducedMotion() {
+    return Boolean(globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+  }
+
+  function clearHintOpening(el) {
+    el.classList.remove("cell-hint-opening");
+    el.style.removeProperty("--hint-open-delay");
+  }
+
+  function onHintOpenAnimationEnd(event) {
+    if (event.animationName !== "hint-open") {
+      return;
+    }
+    clearHintOpening(event.currentTarget);
+  }
+
+  function playHintOpening(kanas) {
+    if (prefersReducedMotion()) {
+      return;
+    }
+    for (let i = 0; i < kanas.length; i += 1) {
+      const el = playBoard.querySelector(`[data-kana="${kanas[i]}"]`);
+      if (!el) {
+        continue;
+      }
+      clearHintOpening(el);
+      void el.offsetWidth;
+      if (i > 0) {
+        el.style.setProperty("--hint-open-delay", `${i * 50}ms`);
+      }
+      el.classList.add("cell-hint-opening");
+    }
+  }
+
   function currentHintInfo() {
     return currentPuzzle()?.info ?? null;
   }
@@ -805,6 +840,7 @@ async function boot() {
     }
     hinted.add(kana);
     applyHintsToBoard();
+    playHintOpening([kana]);
     renderHintChrome();
     return true;
   }
@@ -815,10 +851,12 @@ async function boot() {
       return false;
     }
     hintedRows.add(row);
-    for (const kana of rowKanas(row)) {
+    const kanas = rowKanas(row);
+    for (const kana of kanas) {
       hinted.add(kana);
     }
     applyHintsToBoard();
+    playHintOpening(kanas);
     renderHintChrome();
     return true;
   }
