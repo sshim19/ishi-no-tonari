@@ -74,6 +74,8 @@ export const SCREEN_COPY = {
   C1: "このマスでいいですか？",
   C3: "決める",
   C4: "やめる",
+  A1: "答え",
+  A2: "うそのマスを選んでください",
 };
 
 export const FORBIDDEN = [
@@ -417,6 +419,8 @@ async function boot() {
   const playProgress = document.getElementById("play-progress");
   const playLead = document.querySelector("#screen-play [data-copy-id='P2']");
   const playRule = document.querySelector("#screen-play [data-copy-id='P3']");
+  const answerHint = document.getElementById("answer-hint");
+  const btnAnswer = document.getElementById("btn-answer");
 
   const params = parsePlayParams(globalThis.location.search, currentNowMs());
   const selected = selectDay(stockJson, params);
@@ -428,6 +432,9 @@ async function boot() {
   /** @type {string | null} */
   let pendingKana = null;
   let confirmRestoreFocus = true;
+  let answerMode = false;
+  /** @type {Record<string, "green" | "red">} */
+  let memos = Object.create(null);
   /** @type {"" | "ok" | "fail"} */
   let copyState = "";
   const returnVisit = params.visit2 || introSeen();
@@ -502,7 +509,9 @@ async function boot() {
       const stone = Boolean(puzzle.info.occupied[i]);
       const value = revealed && i === puzzle.info.lie ? truth[i] : hidden[i];
       const face = cellFace({ stone, value, revealed });
-      playBoard.append(makeCell(kana, face, i, 6));
+      const el = makeCell(kana, face, i, 6);
+      applyMemoClass(el, kana);
+      playBoard.append(el);
     }
   }
 
@@ -567,6 +576,49 @@ async function boot() {
     if (playLead) playLead.hidden = compact;
     if (playRule) playRule.hidden = compact;
     btnS6.hidden = !returnVisit || compact;
+    renderAnswerChrome();
+  }
+
+  function applyMemoClass(el, kana) {
+    el.classList.remove("cell-memo-green", "cell-memo-red");
+    const memo = memos[kana];
+    if (memo === "green") {
+      el.classList.add("cell-memo-green");
+    } else if (memo === "red") {
+      el.classList.add("cell-memo-red");
+    }
+  }
+
+  function cycleMemo(kana) {
+    const current = memos[kana] ?? null;
+    const next = current === null ? "green" : current === "green" ? "red" : null;
+    if (next) {
+      memos[kana] = next;
+    } else {
+      delete memos[kana];
+    }
+    const el = playBoard.querySelector(`[data-kana="${kana}"]`);
+    if (el) {
+      applyMemoClass(el, kana);
+    }
+  }
+
+  function setAnswerMode(on) {
+    answerMode = Boolean(on) && !slotOutcome();
+    renderAnswerChrome();
+  }
+
+  function renderAnswerChrome() {
+    const answering = answerMode && !slotOutcome();
+    if (btnAnswer) {
+      btnAnswer.hidden = Boolean(slotOutcome());
+      btnAnswer.classList.toggle("is-active", answering);
+      btnAnswer.setAttribute("aria-pressed", answering ? "true" : "false");
+    }
+    if (answerHint) {
+      answerHint.hidden = !answering;
+    }
+    screenPlay.classList.toggle("is-answer-mode", answering);
   }
 
   function renderResult() {
@@ -711,7 +763,11 @@ async function boot() {
     if (judged.ignored) {
       return;
     }
-    openConfirm(kana);
+    if (answerMode) {
+      openConfirm(kana);
+      return;
+    }
+    cycleMemo(kana);
   }
 
   function onConfirmOk() {
@@ -731,6 +787,8 @@ async function boot() {
     slotIndex += 1;
     pressed = slotOutcome() ? "saved" : null;
     copyState = "";
+    answerMode = false;
+    memos = Object.create(null);
     fillPlay();
     if (slotOutcome()) {
       lockPlayBoard(null);
@@ -1029,6 +1087,14 @@ async function boot() {
   btnNext.addEventListener("click", () => {
     goNextPuzzle();
   });
+  if (btnAnswer) {
+    btnAnswer.addEventListener("click", () => {
+      if (overlay || slotOutcome()) {
+        return;
+      }
+      setAnswerMode(!answerMode);
+    });
+  }
 
   if (!selected.hasBoard) {
     showScreen("empty");
