@@ -71,6 +71,9 @@ export const SCREEN_COPY = {
   P8: "たて6、よこ6の盤",
   P10: "3問目／5問",
   N1: "次の問題へ",
+  C1: "このマスでいいですか？",
+  C3: "決める",
+  C4: "やめる",
 };
 
 export const FORBIDDEN = [
@@ -396,6 +399,11 @@ async function boot() {
   const overlayPuzzleBoard = document.getElementById("overlay-puzzle-board");
   const playBoard = document.getElementById("play-board");
   const sampleDialog = document.getElementById("sample-dialog");
+  const confirmDialog = document.getElementById("confirm-dialog");
+  const confirmTitle = document.getElementById("confirm-title");
+  const confirmDetail = document.getElementById("confirm-detail");
+  const btnConfirmOk = document.getElementById("btn-confirm-ok");
+  const btnConfirmCancel = document.getElementById("btn-confirm-cancel");
   const btnE3 = document.getElementById("btn-e3");
   const btnS5 = document.getElementById("btn-s5");
   const btnS6 = document.getElementById("btn-s6");
@@ -417,6 +425,9 @@ async function boot() {
   let overlay = false;
   /** @type {string | null} */
   let pressed = null;
+  /** @type {string | null} */
+  let pendingKana = null;
+  let confirmRestoreFocus = true;
   /** @type {"" | "ok" | "fail"} */
   let copyState = "";
   const returnVisit = params.visit2 || introSeen();
@@ -614,13 +625,59 @@ async function boot() {
     }
   }
 
-  function onPlayPress(kana) {
-    if (overlay) {
+  function cellPlaceLabel(kana) {
+    const i = CELL_KANA.indexOf(kana);
+    if (i < 0) {
+      return "";
+    }
+    const row = Math.floor(i / 6) + 1;
+    const col = (i % 6) + 1;
+    return `上から${row}番目、左から${col}番目`;
+  }
+
+  function markPendingCell(kana) {
+    for (const cell of playBoard.querySelectorAll("button.cell")) {
+      cell.classList.toggle("is-pending", Boolean(kana) && cell.dataset.kana === kana);
+    }
+  }
+
+  function resetConfirmState() {
+    const last = pendingKana;
+    pendingKana = null;
+    overlay = sampleDialog.open;
+    if (!sampleDialog.open) {
+      screenPlay.inert = false;
+    }
+    markPendingCell(null);
+    if (confirmRestoreFocus && last) {
+      const el = playBoard.querySelector(`[data-kana="${last}"]`);
+      if (el && !el.disabled && typeof el.focus === "function") {
+        el.focus();
+      }
+    }
+  }
+
+  function closeConfirm(options = {}) {
+    confirmRestoreFocus = options.restoreFocus !== false;
+    if (confirmDialog.open) {
+      confirmDialog.close();
       return;
     }
-    if (slotOutcome()) {
-      return;
-    }
+    resetConfirmState();
+  }
+
+  function openConfirm(kana) {
+    pendingKana = kana;
+    confirmDetail.textContent = `${cellPlaceLabel(kana)}です。`;
+    markPendingCell(kana);
+    overlay = true;
+    screenPlay.inert = true;
+    confirmRestoreFocus = true;
+    confirmDialog.showModal();
+    confirmTitle.focus();
+  }
+
+  function commitPress(kana) {
     const puzzle = currentPuzzle();
     if (!puzzle) {
       return;
@@ -637,6 +694,34 @@ async function boot() {
     copyState = "";
     renderResult();
     resultText.focus();
+  }
+
+  function onPlayPress(kana) {
+    if (overlay) {
+      return;
+    }
+    if (slotOutcome()) {
+      return;
+    }
+    const puzzle = currentPuzzle();
+    if (!puzzle) {
+      return;
+    }
+    const judged = judgePress(puzzle.info, kana);
+    if (judged.ignored) {
+      return;
+    }
+    openConfirm(kana);
+  }
+
+  function onConfirmOk() {
+    const kana = pendingKana;
+    if (!kana) {
+      closeConfirm({ restoreFocus: false });
+      return;
+    }
+    closeConfirm({ restoreFocus: false });
+    commitPress(kana);
   }
 
   function goNextPuzzle() {
@@ -736,7 +821,11 @@ async function boot() {
 
   function visibleCopy() {
     const rows = [];
-    const roots = [app, sampleDialog.open ? sampleDialog : null].filter(Boolean);
+    const roots = [
+      app,
+      sampleDialog.open ? sampleDialog : null,
+      confirmDialog.open ? confirmDialog : null,
+    ].filter(Boolean);
     for (const root of roots) {
       for (const el of root.querySelectorAll("[data-copy-id]")) {
         if (el.closest("[hidden]") || (el.offsetParent === null && el.tagName !== "DIALOG")) {
@@ -836,6 +925,8 @@ async function boot() {
         empty: !screenEmpty.hidden,
         play: !screenPlay.hidden,
         overlay: sampleDialog.open,
+        confirm: confirmDialog.open,
+        pendingKana,
         returnVisit,
         pressed,
         resultVisible: !resultBlock.hidden,
@@ -917,8 +1008,20 @@ async function boot() {
   btnS6.addEventListener("click", openSampleOverlay);
   btnS7.addEventListener("click", closeSampleOverlay);
   sampleDialog.addEventListener("close", () => {
-    overlay = false;
-    screenPlay.inert = false;
+    overlay = confirmDialog.open;
+    if (!confirmDialog.open) {
+      screenPlay.inert = false;
+    }
+  });
+  btnConfirmOk.addEventListener("click", onConfirmOk);
+  btnConfirmCancel.addEventListener("click", () => closeConfirm());
+  confirmDialog.addEventListener("close", () => {
+    resetConfirmState();
+  });
+  confirmDialog.addEventListener("click", (event) => {
+    if (event.target === confirmDialog) {
+      closeConfirm();
+    }
   });
   btnCopy.addEventListener("click", () => {
     copyShare();

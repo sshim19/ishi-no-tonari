@@ -69,6 +69,15 @@
       <button type="button" class="action action-secondary" data-copy-id="S7" id="btn-s7">閉じる</button>
     </dialog>
 
+    <dialog class="sample-dialog confirm-dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-detail">
+      <p class="lead" data-copy-id="C1" id="confirm-title" tabindex="-1">このマスでいいですか？</p>
+      <p class="rule" data-copy-id="C2" id="confirm-detail"></p>
+      <div class="confirm-actions">
+        <button type="button" class="action action-secondary" data-copy-id="C4" id="btn-confirm-cancel">やめる</button>
+        <button type="button" class="action" data-copy-id="C3" id="btn-confirm-ok">決める</button>
+      </div>
+    </dialog>
+
     <script type="module" src="./play.mjs"></script>
   </body>
 </html>
